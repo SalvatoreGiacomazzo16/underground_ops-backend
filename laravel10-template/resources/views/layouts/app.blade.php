@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'homepage')</title>
+    <title>@yield('title', 'Underground Ops Shows')</title>
+    <link rel="icon" type="image/png" href="{{ asset('logoUOS.png') }}">
 
     {{-- Vite styles --}}
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
@@ -16,7 +17,7 @@
     {{-- Header (opzionale) --}}
     <header class="bg-light p-3 mb-4 border-bottom">
         <div class="container">
-            <h1 class="h4 m-0">Laravel Template</h1>
+            <h1 class="h4 m-0">Undeground Ops</h1>
         </div>
     </header>
 

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section("title", "homepage")
+@section("title", "Undeground Ops Shows")
 @section("main-content")
 
 
