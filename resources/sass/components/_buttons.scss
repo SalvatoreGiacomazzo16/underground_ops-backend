@@ -1,0 +1,64 @@
+.uo-btn {
+    padding: 10px 24px;
+    background: $uo-purple;
+    color: #fff !important;
+    border-radius: $radius-md;
+    border: none;
+    cursor: pointer;
+    transition: $transition-fast;
+    text-decoration: none;
+
+    &:hover {
+        background: $uo-purple-light;
+        @include neon-glow();
+    }
+}
+
+.uo-btn-outline {
+    padding: 10px 24px;
+    border-radius: $radius-md;
+    background: transparent;
+    border: 1px solid $uo-purple;
+    color: $uo-purple-light;
+    transition: $transition-fast;
+
+    &:hover {
+        background: $uo-purple-dark;
+        border-color: $uo-purple-light;
+    }
+}
+
+.uo-btn-logout {
+    background: transparent;
+    border: 1px solid $uo-purple-light;
+    color: $uo-purple-light;
+    padding: .65rem .9rem;
+    border-radius: $radius-md;
+    transition: .25s ease;
+
+    &:hover {
+        background: $uo-purple-light;
+        color: #fff;
+        box-shadow: 0 0 12px rgba($uo-purple-light, .7);
+    }
+}
+
+.uo-btn-secondary {
+    display: inline-block;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #c9169a;
+    text-decoration: none;
+    border-radius: 12px;
+
+    border: 2px solid #c9169a;
+    background: transparent;
+    transition: 0.25s ease;
+    box-shadow: 0 0 8px rgba(201, 22, 154, 0.35);
+}
+
+.uo-btn-secondary:hover {
+    background: rgba(201, 22, 154, 0.15);
+    transform: translateY(-3px);
+}

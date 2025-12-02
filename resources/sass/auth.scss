@@ -1,0 +1,62 @@
+/* ================================
+   AUTH PAGES
+================================ */
+
+.auth-wrapper {
+    min-height: 100dvh;
+    @include flex-center;
+    padding: $space-4;
+}
+
+.auth-box {
+    @include card;
+    max-width: 420px;
+    text-align: center;
+}
+
+.auth-title {
+    font-family: $font-logo;
+    font-size: 1.7rem;
+    color: $uo-purple-light;
+    margin-bottom: $space-2;
+}
+
+.auth-subtitle {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: $space-4;
+}
+
+.auth-field {
+    text-align: left;
+    margin-bottom: $space-3;
+
+    label {
+        color: $uo-purple-light;
+        margin-bottom: $space-1;
+        display: block;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: $radius-md;
+        border: 1px solid $uo-purple;
+        background: $uo-black;
+        color: #fff;
+    }
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 10px 24px;
+    background: $uo-purple;
+    border-radius: $radius-md;
+    color: #fff;
+    margin-top: $space-3;
+
+    &:hover {
+        background: $uo-purple-light;
+        @include neon-glow();
+    }
+}

@@ -1,0 +1,18 @@
+.feature-box {
+    @include card;
+    transition: $transition-fast;
+
+    &:hover {
+        transform: translateY(-4px);
+        @include neon-glow();
+    }
+
+    h3 {
+        color: $uo-purple-light;
+        margin-bottom: $space-2;
+    }
+
+    p {
+        color: $uo-gray-3;
+    }
+}

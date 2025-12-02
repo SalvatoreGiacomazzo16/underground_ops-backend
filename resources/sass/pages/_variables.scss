@@ -1,0 +1,71 @@
+/* ================================
+   UNDERGROUND OPS VARIABLES
+================================ */
+
+/* Brand Colors */
+$uo-purple: #961474;
+$uo-purple-light: #c9169a;
+$uo-purple-dark: #5a0f46;
+
+$uo-black: #000000;
+$uo-black-soft: #0e0e0e;
+$uo-black-card: #0f0f0f;
+
+$uo-gray-1: #1f1f1f;
+$uo-gray-2: #353535;
+$uo-gray-3: #bbbbbb;
+
+/* Typography */
+$font-main: 'Nunito', sans-serif;
+$font-logo: 'Eater', cursive;
+
+/* Border Radius */
+$radius-sm: 4px;
+$radius-md: 6px;
+$radius-lg: 10px;
+
+/* Shadows & Glow */
+$glow-purple: 0 0 12px rgba(201, 22, 154, 0.6);
+$glow-purple-soft: 0 0 8px rgba(201, 22, 154, 0.35);
+$glow-border: 0 0 10px rgba(150, 20, 116, 0.4);
+
+/* Transitions */
+$transition-fast: 0.25s ease;
+$transition-slow: 0.45s ease;
+
+/* Spacing */
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 22px;
+$space-6: 30px;
+
+/* ============================================
+   UNDERGROUND OPS — Z-INDEX ARCHITECTURE
+   (Sistema istituzionale & definitivo)
+============================================ */
+
+/* Base Content Levels */
+$z-background: 0; // elementi di sfondo, texture
+$z-content: 1; // contenuto generale
+$z-content-floating: 2; // card, elementi in hover, dropdown semplici
+
+/* NAVIGATION */
+$z-header: 10; // header desktop (sotto everything mobile)
+$z-navbar-mobile: 15; // topbar mobile
+$z-navbar-toggle: 20; // hamburger (deve essere sempre cliccabile)
+
+/* MOBILE MENU */
+$z-overlay: 30; // overlay mobile
+$z-drawer: 40; // drawer mobile (deve stare sopra overlay, sotto modali)
+
+/* SIDEBAR DESKTOP */
+$z-sidebar: 50; // sidebar admin desktop
+$z-sidebar-floating: 55; // eventuali hover, tooltip della sidebar
+
+/* MODAL & SYSTEM UI */
+$z-modal-backdrop: 90; // backdrop delle modali
+$z-modal: 100; // finestra modale vera
+$z-notification: 110; // toasts, alert, snackbars
+$z-debug: 999; // debug UI, DevTools overlay

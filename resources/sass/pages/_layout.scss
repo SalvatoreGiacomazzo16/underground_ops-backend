@@ -1,0 +1,159 @@
+/* File: _layout.scss (COMPLETO E CORRETTO) */
+
+/* ===========================================
+   HEADER BASE
+=========================================== */
+
+.uo-header {
+    background: #000;
+    border-bottom: 1px solid #961474;
+    z-index: $z-header;
+    position: relative;
+    width: 100%;
+}
+
+.uo-header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: clamp(6px, 1.5vw, 10px) clamp(12px, 3vw, 24px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo */
+.uo-logo {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    text-decoration: none;
+    color: #C9169A;
+}
+
+.uo-logo-img {
+    width: clamp(28px, 6vw, 42px);
+    height: clamp(28px, 6vw, 42px);
+    animation: spin 5s linear infinite;
+}
+
+.uo-logo-text {
+    font-family: "Eater", cursive;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+}
+
+/* ===========================================
+   NAV DRAWER (UNIFORMATO)
+===========================================
+
+.uo-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: clamp(180px, 45vw, 260px);
+    height: 100vh;
+    background: #050505;
+    padding: clamp(70px, 12vw, 90px) clamp(16px, 4vw, 24px);
+    border-left: 2px solid #961474;
+    transform: translateX(100%);
+    transition: transform .25s ease-out;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-bottom: 1px solid rgba($uo-purple-light, 0.4);
+    box-shadow: 0 0 15px rgba($uo-purple-light, 0.3);
+}
+
+.uo-nav.is-open {
+    transform: translateX(0);
+}
+*/
+/* Overlay
+.uo-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+    z-index: 20;
+}
+
+.uo-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+*/
+/* ===========================================
+   HAMBURGER (UNIFORMATO)
+===========================================
+
+.uo-menu-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 40;
+}
+
+.uo-menu-toggle span {
+    width: clamp(18px, 5vw, 24px);
+    height: 2px;
+    background: #C9169A;
+    border-radius: 2px;
+    transition: .25s ease;
+}
+/*
+/* LOGICA is-open ora definita qui per coerenza
+.uo-menu-toggle.is-open span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.uo-menu-toggle.is-open span:nth-child(2) {
+    opacity: 0;
+}
+
+.uo-menu-toggle.is-open span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+/*
+/* ===========================================
+   DESKTOP FIX
+=========================================== */
+
+@media (min-width: 769px) {
+
+    /* Forzo la scomparsa del Drawer Mobile su Desktop
+    .uo-nav {
+        display: none !important;
+    }
+
+    .uo-menu-toggle {
+        display: none;
+    }
+
+    .uo-overlay {
+        display: none;
+    }
+
+    /* Nota: nav-desktop.blade.php gestirà la navbar desktop */
+}
+
+/*
+/* ===========================================
+   ANIMATION
+=========================================== */
+@keyframes spin {
+    from {
+        transform: rotate(0);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

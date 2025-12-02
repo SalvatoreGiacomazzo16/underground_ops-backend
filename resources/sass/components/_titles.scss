@@ -1,0 +1,65 @@
+.uo-title {
+    font-family: 'Eater', cursive;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: $uo-purple-light;
+    text-align: center;
+    margin-bottom: $space-4;
+    letter-spacing: 1px;
+    line-height: 1.2;
+
+    // Leggero bagliore
+    text-shadow:
+        0 0 4px rgba($uo-purple-light, 0.8),
+        0 0 8px rgba($uo-purple, 0.6);
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE NAV — Signature Title
+--------------------------------------------------------- */
+
+.uo-mobile-signature {
+    font-family: $font-logo; // "Eater", cursive
+    color: $uo-purple-light;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    line-height: 1;
+}
+
+.uo-dashboard-capsule {
+    max-width: 600px;
+    width: 100%;
+    background: rgba(20, 0, 20, 0.6); // VIOLA SCURO TRASPARENTE
+    border: 2px solid $uo-purple-light;
+    border-radius: 30px;
+    padding: 40px;
+    box-shadow: 0 0 25px rgba($uo-purple-light, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.uo-label {
+    font-size: 1.4rem;
+    color: #d077ff; // un purple chiaro visibile
+}
+
+.uo-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 4px rgba($uo-purple-light, .9);
+}
+
+/* Special styling per etichetta username dentro il menu */
+.uo-user-label {
+    color: $uo-purple-light;
+    font-size: 1.2rem;
+    margin: 10px 0;
+}
+
+.uo-auth-logo {
+    width: clamp(60px, 14vw, 100px);
+    height: clamp(60px, 14vw, 100px);
+    animation: spin 6s linear infinite;
+    margin-bottom: 20px;
+}

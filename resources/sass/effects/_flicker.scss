@@ -1,0 +1,53 @@
+/* ===========================================
+   STATIC FLICKER (OPTIONAL)
+   =========================================== */
+
+@keyframes fxNeonFlicker {
+    0% {
+        opacity: 1;
+    }
+
+    4% {
+        opacity: .3;
+    }
+
+    7% {
+        opacity: .9;
+    }
+
+    12% {
+        opacity: .4;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    32% {
+        opacity: .2;
+    }
+
+    45% {
+        opacity: 1;
+    }
+
+    56% {
+        opacity: .5;
+    }
+
+    72% {
+        opacity: 1;
+    }
+
+    85% {
+        opacity: .3;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.fx-neon-flicker {
+    animation: fxNeonFlicker 4s infinite steps(1);
+}

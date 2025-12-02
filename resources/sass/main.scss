@@ -1,0 +1,51 @@
+/* ============================================================
+   1) VARIABLES (sempre per prime)
+============================================================ */
+@import "pages/variables";
+
+/* ============================================================
+   2) BOOTSTRAP — deve stare PRIMA dei componenti custom
+============================================================ */
+@import "bootstrap/scss/bootstrap";
+
+/* ============================================================
+   3) MIXINS GLOBALI
+============================================================ */
+@import "pages/mixins";
+
+/* ============================================================
+   4) BASE STYLES (reset, typography, body, ecc.)
+============================================================ */
+@import "pages/base";
+
+
+/* ============================================================
+5) COMPONENTS GLOBALI (navbar deve stare QUI)
+============================================================ */
+@import "components/navbar"; // <-- NAVBAR ora è nel punto giusto
+@import "components/buttons";
+@import "components/cards";
+@import "components/forms";
+@import "components/titles";
+
+/* ============================================================
+6) PAGE LAYOUT (struttura, wrapper, spacing)
+============================================================ */
+@import "pages/layout";
+
+/* ============================================================
+7) PAGE-SPECIFIC STYLES
+============================================================ */
+@import "pages/dashboard";
+
+@import "pages/welcome";
+
+// @import "pages/admin";  // <-- commento corretto
+
+/* ============================================================
+   8) VFX — effetti visivi
+============================================================ */
+@import "effects/neon";
+@import "effects/shake";
+@import "effects/glitch";
+@import "effects/flicker";

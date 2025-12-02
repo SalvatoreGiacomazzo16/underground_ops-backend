@@ -1,0 +1,193 @@
+/* Background hero */
+.uo-hero {
+    position: relative;
+    height: 180px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(10, 0, 20, 0.9);
+}
+
+.uo-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: url('/images/enterprise-bg.jpg') center/cover no-repeat;
+    opacity: 0.25;
+}
+
+.uo-hero-content {
+    position: relative;
+    padding: 35px;
+}
+
+.uo-hero-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #c9169a;
+}
+
+.uo-hero-subtitle {
+    color: #b8a0c9;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+
+/* KPI Cards */
+.uo-kpi-card {
+    background: rgba(25, 0, 35, 0.45);
+    border: 1px solid rgba(255, 0, 179, 0.15);
+    padding: 22px;
+    border-radius: 12px;
+    color: #fff;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 12px rgba(146, 24, 146, 0.15);
+    transition: 0.3s ease, transform 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Iridescent Glow on Hover */
+.uo-kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(230, 150, 255, 0.7);
+
+    box-shadow:
+        0 0 18px rgba(230, 150, 255, 0.45),
+        0 0 28px rgba(180, 60, 255, 0.25);
+}
+
+/* Iridescent light sweep (optional but 🔥) */
+.uo-kpi-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg,
+            rgba(255, 160, 255, 0) 0%,
+            rgba(240, 150, 255, 0.25) 50%,
+            rgba(255, 160, 255, 0) 100%);
+    opacity: 0;
+    transform: translateX(-30%) skewX(-15deg);
+    transition: 0.35s ease;
+}
+
+.uo-kpi-card:hover::after {
+    opacity: 1;
+    transform: translateX(30%) skewX(-15deg);
+}
+
+
+.uo-kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #e46cd9;
+}
+
+.uo-kpi-label {
+    font-size: 0.95rem;
+    color: #c9b1cd;
+}
+
+
+/* Sections */
+.uo-section-title {
+    color: #c9169a;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+
+/* CONTAINER */
+.uo-event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* EVENT ITEM */
+.uo-event-item {
+    background: rgba(20, 0, 30, 0.5);
+    border: 1px solid rgba(201, 22, 154, 0.2);
+    padding: 16px 20px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.25s ease;
+    backdrop-filter: blur(4px);
+
+    &:hover {
+        box-shadow: 0 0 20px rgba(201, 22, 154, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+/* TEXT */
+.uo-event-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.uo-event-meta {
+    color: #b8a2c6;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* BADGES */
+.uo-badge {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.uo-badge-active {
+    background: rgba(0, 200, 120, 0.2);
+    border: 1px solid #00c878;
+    color: #00ffae;
+}
+
+.uo-badge-draft {
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid #ffc107;
+    color: #ffd86a;
+}
+
+.uo-badge-cancelled {
+    background: rgba(255, 50, 50, 0.15);
+    border: 1px solid #ff4343;
+    color: #ff7373;
+}
+
+.uo-badge-archived {
+    background: rgba(120, 120, 120, 0.15);
+    border: 1px solid #aaaaaa;
+    color: #dddddd;
+}
+
+.uo-badge-default {
+    background: rgba(200, 200, 200, 0.15);
+    border: 1px solid #888;
+    color: #ccc;
+}
+
+
+/* Buttons */
+.uo-dashboard-btn {
+    background: rgba(30, 0, 50, 0.6);
+    border: 1px solid rgba(201, 22, 154, 0.6);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    transition: 0.2s;
+    text-decoration: none;
+}
+
+.uo-dashboard-btn:hover {
+    background: rgba(201, 22, 154, 0.9);
+}

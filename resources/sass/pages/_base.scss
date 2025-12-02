@@ -1,0 +1,82 @@
+/*FONTS*/
+@import url('https://fonts.bunny.net/css?family=Eater');
+@import url('https://fonts.bunny.net/css?family=Nunito');
+
+
+
+
+/* ================================
+   BASE STYLES
+================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border: none;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: $font-main;
+    background: $uo-black;
+
+}
+
+a {
+    color: $uo-purple-light;
+    @include transition;
+
+    &:hover {
+        color: #fff;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: $uo-purple !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $uo-purple-dark;
+    border-radius: $radius-md;
+}
+
+::-webkit-scrollbar-track {
+    background: #050505;
+}
+
+/* Glow animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =======================================
+   404 LOGO
+======================================= */
+
+.uo-404-logo {
+    width: clamp(70px, 12vw, 100px);
+    height: clamp(70px, 12vw, 100px);
+    margin: 0 auto;
+    display: block;
+    animation: spin 6s linear infinite;
+    filter: drop-shadow(0 0 8px #C9169A);
+}

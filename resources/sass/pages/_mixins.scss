@@ -1,0 +1,32 @@
+/* ================================
+   MIXINS
+================================ */
+
+@mixin neon-glow($color: $uo-purple-light) {
+    box-shadow: 0 0 12px rgba($color, 0.55);
+}
+
+@mixin transition {
+    transition: $transition-fast;
+}
+
+@mixin flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@mixin card {
+    background: $uo-black-card;
+    border: 1px solid $uo-purple;
+    border-radius: $radius-lg;
+    padding: $space-5;
+}
+
+@mixin responsive($break) {
+    @if $break ==mobile {
+        @media (max-width: 768px) {
+            @content;
+        }
+    }
+}
