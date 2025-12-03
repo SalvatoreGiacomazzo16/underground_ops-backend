@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -23,6 +23,12 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        //
+        // -------------------------------------
+        // SOLO GLI ADMIN (role_id = 1) POSSONO
+        // GESTIRE PROFILI STAFF
+        // -------------------------------------
+        Gate::define('manage-staff', function ($user) {
+            return $user->role_id === 1;
+        });
     }
 }

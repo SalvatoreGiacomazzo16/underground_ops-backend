@@ -22,6 +22,8 @@ class StaffProfile extends Model
 
     protected $casts = [
         'skills' => 'array',
+         'is_external' => 'boolean',
+        'is_active'   => 'boolean',
     ];
 
     /*
@@ -37,7 +39,9 @@ class StaffProfile extends Model
 
     public function events()
     {
-        return $this->belongsToMany(Event::class, 'event_staff');
+        return $this->belongsToMany(Event::class, 'event_staff')
+        ->withPivot('role_in_event', 'fee', 'checkin_time', 'checkout_time', 'notes')
+        ->withTimestamps();
     }
 
     public function eventAssignments()

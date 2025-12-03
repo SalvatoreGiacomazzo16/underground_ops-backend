@@ -70,8 +70,14 @@ public function createdLocations()
 }
 
 
-    public function staffProfiles()
+ /*   public function staffProfiles()
 {
-    return $this->hasMany(StaffProfile::class, 'user_id');
+    return $this->hasOne(StaffProfile::class, 'user_id');
+}*/
+
+public function staffProfile()
+{
+    return $this->hasOne(StaffProfile::class, 'user_id');
 }
+
 }

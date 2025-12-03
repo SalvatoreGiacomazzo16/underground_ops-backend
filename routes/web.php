@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ManagerDashboardController;
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\EventStaffController;
+
 /*
 |--------------------------------------------------------------------------
 | Auth Routes
@@ -22,6 +25,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/create', [EventController::class, 'create'])->name('create');
         Route::post('/', [EventController::class, 'store'])->name('store');
     });
+
+      // Staff CRUD
+    Route::resource('staff', StaffController::class)->except(['show']);
+
+    // Assegnazione staff agli eventi
+    Route::get('events/{event}/staff', [EventStaffController::class, 'edit'])
+        ->name('events.staff.edit');
+
+    Route::post('events/{event}/staff', [EventStaffController::class, 'update'])
+        ->name('events.staff.update');
 });
 
 

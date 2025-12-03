@@ -104,9 +104,10 @@
     </a>
 
     {{-- STAFF --}}
-    <a href="#" class="uo-dashboard-btn">
-        Staff
-    </a>
+   {{-- STAFF --}}
+<a href="{{ route('admin.staff.create') }}" class="uo-dashboard-btn">
+   + Staff
+</a>
 
 </div>
 

@@ -45,7 +45,9 @@ class Event extends Model
 
     public function staff()
     {
-        return $this->belongsToMany(StaffProfile::class, 'event_staff');
+            return $this->belongsToMany(StaffProfile::class, 'event_staff')
+        ->withPivot('role_in_event', 'fee', 'checkin_time', 'checkout_time', 'notes')
+        ->withTimestamps();
     }
 
     public function creator()
