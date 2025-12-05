@@ -4,14 +4,10 @@
 <div class="uo-dashboard container-fluid">
 
     {{-- HERO --}}
-    <div class="uo-hero mb-5">
-        <div class="uo-hero-bg"></div>
-        <div class="uo-hero-content">
-            <h1 class="uo-hero-title">Gestione Staff</h1>
-            <p class="uo-hero-subtitle">CREW MANAGEMENT — UNDERGROUND OPS</p>
-        </div>
-    </div>
-
+  <div class="mb-4">
+    <h1 class="uo-section-title mb-1">Gestione Staff</h1>
+    <p class="text-secondary">CREW MANAGEMENT — UNDERGROUND OPS</p>
+</div>
     {{-- Quick Actions --}}
     <div class="uo-quick-actions mb-4">
         <a href="{{ route('admin.staff.create') }}" class="uo-dashboard-btn">
@@ -85,11 +81,14 @@
 
             </table>
         </div>
+<div class="mt-3 uo-pagination ">
 
-        <div class="mt-3">
-            {{ $staff->links() }}
-        </div>
+@include('components.pagination', ['paginator' => $staff])
 
+
+
+
+</div>
     </div>
 
 </div>

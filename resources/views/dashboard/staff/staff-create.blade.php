@@ -78,7 +78,7 @@
                 {{-- Attivo --}}
                 <div class="col-md-6 d-flex align-items-center">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox"
+                        <input class="form-check-input" name="is_active" value="1" type="checkbox"
                                name="is_active" id="is_active" checked>
                         <label class="form-check-label ms-2" for="is_active">
                             Attivo

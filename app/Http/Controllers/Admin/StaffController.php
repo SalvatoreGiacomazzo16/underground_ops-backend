@@ -16,7 +16,7 @@ class StaffController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        return view('dashboard.staff.staff-index', compact('users'));
+      return view('dashboard.staff.staff-index', compact('staff'));
     }
 
     public function create()
@@ -25,7 +25,7 @@ class StaffController extends Controller
         $users = User::whereDoesntHave('staffProfile')
             ->orderBy('name')
             ->get();
-       return view('dashboard.staff.staff-create', compact('users'));
+      return view('dashboard.staff.staff-create', compact('users'));
     }
 public function store(Request $request)
 {

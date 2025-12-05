@@ -23,17 +23,26 @@
             con controllo totale e zero rumore.
         </p>
 
-      <div class="uo-welcome-cta d-flex flex-column flex-sm-row justify-content-center align-items-center gap-3 mb-4">
+   <div class="uo-welcome-cta d-flex flex-column flex-sm-row justify-content-center align-items-center gap-3 mb-4">
 
-    <a href="{{ route('login') }}" class="uo-btn-primary">
-        Accedi alla Piattaforma
-    </a>
+    @guest
+        <a href="{{ route('login') }}" class="uo-btn-primary">
+            Accedi alla Piattaforma
+        </a>
 
-    <a href="{{ route('register') }}" class="uo-btn-secondary">
-        Registrati
-    </a>
+        <a href="{{ route('register') }}" class="uo-btn-secondary">
+            Registrati
+        </a>
+    @endguest
+
+    @auth
+        <a href="{{ route('admin.dashboard') }}" class="uo-btn-primary">
+            Torna alla Dashboard
+        </a>
+    @endauth
 
 </div>
+
 
         <div class="uo-feature-strip row g-3 g-md-4 justify-content-center">
 

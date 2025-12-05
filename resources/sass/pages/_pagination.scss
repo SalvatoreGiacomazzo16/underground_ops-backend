@@ -1,0 +1,91 @@
+/* ============================================================
+   UO COMPONENT: Pagination (PillNeon)
+   Clean, scalable, compatible with Laravel paginator
+============================================================ */
+
+.uo-pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+}
+
+.uo-pagination {
+    display: flex;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+/* Base style */
+.uo-page a,
+.uo-page span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    min-width: 42px;
+    height: 42px;
+
+    padding: 0 14px;
+    border-radius: 14px;
+
+    background: rgba(20, 0, 30, 0.6);
+    border: 1px solid rgba(201, 22, 154, 0.4);
+
+    backdrop-filter: blur(6px);
+
+    color: #ff32c9;
+    font-weight: 700;
+    font-size: 0.95rem;
+
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+/* Hover */
+.uo-page a:hover {
+    transform: translateY(-3px) scale(1.06);
+    border-color: #ff76f0;
+    color: #ffffff;
+
+    box-shadow:
+        0 0 10px rgba(255, 0, 190, 0.4),
+        0 0 20px rgba(150, 0, 255, 0.3);
+}
+
+/* Active page */
+.uo-page.active span {
+    background: linear-gradient(135deg,
+            rgba(255, 0, 180, 0.65),
+            rgba(150, 0, 255, 0.65));
+    border-color: #ff32c9;
+    color: #fff;
+
+    box-shadow:
+        0 0 14px rgba(255, 0, 190, 0.6),
+        0 0 24px rgba(150, 0, 255, 0.5),
+        inset 0 0 16px rgba(255, 0, 240, 0.45);
+
+    animation: uo-pagination-pulse 1.6s infinite ease-in-out;
+}
+
+/* Disabled */
+.uo-page.disabled span {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Pulse animation */
+@keyframes uo-pagination-pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

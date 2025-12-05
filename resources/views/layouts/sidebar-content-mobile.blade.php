@@ -24,10 +24,10 @@
     </li>
 
     {{-- Staff --}}
-    <li>
-        <a href="#" class="sidebar-link">
-            <i class="fas fa-users-cog me-2"></i> Staff
-        </a>
-    </li>
-
+<li>
+    <a href="{{ route('admin.staff.index') }}"
+       class="sidebar-link {{ Request::routeIs('admin.staff.*') ? 'active' : '' }}">
+        <i class="fas fa-users-cog me-2"></i> Staff
+    </a>
+</li>
 </ul>

@@ -191,3 +191,105 @@
 .uo-dashboard-btn:hover {
     background: rgba(201, 22, 154, 0.9);
 }
+
+/* ================================
+   PAGINATION — Underground Ops Style
+================================ */
+
+.uo-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 20px;
+}
+
+.uo-pagination a,
+.uo-pagination span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 38px;
+    height: 38px;
+
+    padding: 6px 14px;
+    border-radius: 8px;
+
+    background: rgba(20, 0, 30, 0.55);
+    border: 1px solid rgba(201, 22, 154, 0.35);
+
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+
+    backdrop-filter: blur(4px);
+    transition: all 0.25s ease;
+}
+
+/* Active page */
+.uo-pagination .active {
+    background: rgba(201, 22, 154, 0.25);
+    border-color: #c9169a;
+    color: #ff44ee;
+}
+
+/* ============================================
+   NEW UNDERGROUND OPS PAGINATION
+============================================ */
+
+.uo-pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.uo-pagination {
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    list-style: none;
+}
+
+/* Base button */
+.uo-pagination a,
+.uo-pagination span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 40px;
+    height: 40px;
+
+    border-radius: 10px;
+    background: rgba(20, 0, 30, 0.55);
+    border: 1px solid rgba(201, 22, 154, 0.38);
+
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+
+    backdrop-filter: blur(4px);
+    transition: 0.22s ease;
+}
+
+/* Hover */
+.uo-pagination a:hover {
+    color: #ff44ee;
+    border-color: #ff44ee;
+    box-shadow: 0 0 14px rgba(201, 22, 154, 0.65);
+    transform: translateY(-2px);
+}
+
+/* Active page */
+.uo-pagination .active span {
+    background: rgba(201, 22, 154, 0.28);
+    border-color: #ff44ee;
+    color: #ff44ee;
+    box-shadow: 0 0 12px rgba(255, 40, 200, 0.55);
+}
+
+/* Disabled */
+.uo-pagination .disabled span {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
