@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
+
 <div class="container-fluid">
 
     {{-- TITOLO --}}
@@ -30,18 +31,22 @@
                 <div class="col-md-6 input-field">
                     <label for="staff_type">Tipo di Staff</label>
                     <select id="staff_type" name="staff_type" required>
-                        <option value="registered">Utente Registrato</option>
-                        <option value="external">Staff Esterno</option>
+                        <option value="registered" {{ old('staff_type') === 'registered' ? 'selected' : '' }}>
+                            Utente Registrato
+                        </option>
+                        <option value="external" {{ old('staff_type') === 'external' ? 'selected' : '' }}>
+                            Staff Esterno
+                        </option>
                     </select>
                 </div>
 
-                {{-- Sezione utenti registrati --}}
+                {{-- Utente registrato (solo se staff_type = registered) --}}
                 <div class="col-md-6 input-field" id="user_wrapper">
                     <label for="user_id">Utente Registrato</label>
                     <select name="user_id" id="user_id">
                         <option value="">-- Seleziona utente --</option>
                         @foreach($users as $u)
-                            <option value="{{ $u->id }}">
+                            <option value="{{ $u->id }}" {{ old('user_id') == $u->id ? 'selected' : '' }}>
                                 {{ $u->name }} ({{ $u->email }})
                             </option>
                         @endforeach
@@ -51,35 +56,55 @@
                 {{-- Stage Name --}}
                 <div class="col-md-6 input-field">
                     <label for="stage_name">Stage Name</label>
-                    <input type="text" id="stage_name" name="stage_name"
-                           placeholder="DJ KRYPT, PR Giada, Security Mario…">
+                    <input
+                        type="text"
+                        id="stage_name"
+                        name="stage_name"
+                        value="{{ old('stage_name') }}"
+                        placeholder="DJ KRYPT, PR Giada, Security Mario…">
                 </div>
 
                 {{-- Telefono --}}
                 <div class="col-md-6 input-field">
                     <label for="phone">Telefono</label>
-                    <input type="text" id="phone" name="phone">
+                    <input
+                        type="text"
+                        id="phone"
+                        name="phone"
+                        value="{{ old('phone') }}">
                 </div>
 
                 {{-- Bio --}}
                 <div class="col-12 input-field">
                     <label for="bio">Bio</label>
-                    <textarea id="bio" name="bio" rows="3"
-                              placeholder="Breve descrizione dello staff…"></textarea>
+                    <textarea
+                        id="bio"
+                        name="bio"
+                        rows="3"
+                        placeholder="Breve descrizione dello staff…">{{ old('bio') }}</textarea>
                 </div>
 
                 {{-- Skills --}}
                 <div class="col-12 input-field">
                     <label for="skills">Skills (separate da virgola)</label>
-                    <input type="text" id="skills" name="skills"
-                           placeholder="DJ, PR, Tecnico Luci…">
+                    <input
+                        type="text"
+                        id="skills"
+                        name="skills"
+                        value="{{ old('skills') }}"
+                        placeholder="DJ, PR, Tecnico luci…">
                 </div>
 
                 {{-- Attivo --}}
                 <div class="col-md-6 d-flex align-items-center">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" name="is_active" value="1" type="checkbox"
-                               name="is_active" id="is_active" checked>
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="is_active"
+                            name="is_active"
+                            value="1"
+                            {{ old('is_active', 1) ? 'checked' : '' }}>
                         <label class="form-check-label ms-2" for="is_active">
                             Attivo
                         </label>
@@ -89,8 +114,11 @@
                 {{-- Note interne --}}
                 <div class="col-12 input-field">
                     <label for="notes">Note interne</label>
-                    <textarea id="notes" name="notes" rows="3"
-                              placeholder="Aggiungi eventuali note…"></textarea>
+                    <textarea
+                        id="notes"
+                        name="notes"
+                        rows="3"
+                        placeholder="Aggiungi eventuali note…">{{ old('notes') }}</textarea>
                 </div>
 
             </div>

@@ -74,9 +74,12 @@ class Event extends Model
             }
         });
     }
-    protected $casts = [
+   protected $casts = [
     'start_datetime' => 'datetime',
-    'end_datetime' => 'datetime',
+    'end_datetime'   => 'datetime',
+    'status'         => 'string',
+    'visibility'     => 'string',
 ];
+
 
 }

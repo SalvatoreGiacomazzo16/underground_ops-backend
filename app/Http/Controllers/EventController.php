@@ -12,11 +12,14 @@ class EventController extends Controller
     /**
      * Lista eventi (admin/events)
      */
-    public function index()
-    {
-        $events = Event::with('location')->get();
-        return view('admin.events.index', compact('events'));
-    }
+public function index()
+{
+    $events = Event::with('location')
+        ->orderByDesc('start_datetime')
+        ->paginate(15);
+
+    return view('dashboard.events.events-index', compact('events'));
+}
 
     /**
      * Pagina CREATE EVENT

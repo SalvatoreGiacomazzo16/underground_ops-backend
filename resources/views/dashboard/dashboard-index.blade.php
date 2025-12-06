@@ -46,7 +46,7 @@
 
     </div>
 
-    {{-- Recent Events --}}
+
 {{-- Recent Events --}}
 <div class="uo-section mb-5">
     <h2 class="uo-section-title">Ultimi Eventi</h2>

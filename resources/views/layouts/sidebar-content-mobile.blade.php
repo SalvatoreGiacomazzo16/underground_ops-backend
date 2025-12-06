@@ -10,11 +10,13 @@
     </li>
 
     {{-- Eventi --}}
-    <li>
-        <a href="#" class="sidebar-link">
-            <i class="fas fa-calendar-alt me-2"></i> Eventi
-        </a>
-    </li>
+  <li>
+    <a href="{{ route('admin.events.index') }}"
+       class="sidebar-link {{ Request::routeIs('admin.events.*') ? 'active' : '' }}">
+        <i class="fas fa-calendar-alt me-2"></i> Eventi
+    </a>
+</li>
+
 
     {{-- Locations --}}
     <li>

@@ -3,10 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\ManagerDashboardController;
+
+// CONTROLLER ADMIN
+use App\Http\Controllers\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\EventStaffController;
+use App\Http\Controllers\ManagerDashboardController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -14,38 +17,82 @@ use App\Http\Controllers\Admin\EventStaffController;
 |--------------------------------------------------------------------------
 */
 Auth::routes();
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('/', [ManagerDashboardController::class, 'index'])
-        ->name('dashboard');
+/*
+|--------------------------------------------------------------------------
+| Area Admin (protetta da auth)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    // EVENT CRUD
-    Route::prefix('events')->name('events.')->group(function () {
-        Route::get('/', [EventController::class, 'index'])->name('index');
-        Route::get('/create', [EventController::class, 'create'])->name('create');
-        Route::post('/', [EventController::class, 'store'])->name('store');
+        // DASHBOARD
+        Route::get('/', [ManagerDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        /*
+        |--------------------------------------------------------------------------
+        | EVENT CRUD
+        |--------------------------------------------------------------------------
+        |
+        | View usate:
+        | - dashboard/events/events-index.blade.php
+        | - dashboard/events/events-edit.blade.php
+        | - dashboard/dashboard-create.blade.php   (create)
+        |
+        */
+
+        Route::prefix('events')->name('events.')->group(function () {
+
+            // LISTA EVENTI
+            Route::get('/', [AdminEventController::class, 'index'])->name('index');
+
+            // CREATE
+            Route::get('/create', [AdminEventController::class, 'create'])->name('create');
+            Route::post('/', [AdminEventController::class, 'store'])->name('store');
+
+            // EDIT + UPDATE
+            Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
+            Route::put('/{event}', [AdminEventController::class, 'update'])->name('update');
+
+            // DELETE
+            Route::delete('/{event}', [AdminEventController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | STAFF CRUD
+        | Usa StaffController con views in:
+        | - resources/views/dashboard/staff/
+        |--------------------------------------------------------------------------
+        */
+        Route::resource('staff', StaffController::class)->except(['show']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | STAFF ASSEGNATO AGLI EVENTI
+        | View usata:
+        | - dashboard/events/staff.blade.php
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('events/{event}/staff', [EventStaffController::class, 'edit'])
+            ->name('events.staff.edit');
+
+        Route::post('events/{event}/staff', [EventStaffController::class, 'update'])
+            ->name('events.staff.update');
     });
-
-      // Staff CRUD
-    Route::resource('staff', StaffController::class)->except(['show']);
-
-    // Assegnazione staff agli eventi
-    Route::get('events/{event}/staff', [EventStaffController::class, 'edit'])
-        ->name('events.staff.edit');
-
-    Route::post('events/{event}/staff', [EventStaffController::class, 'update'])
-        ->name('events.staff.update');
-});
 
 
 /*
 |--------------------------------------------------------------------------
-| Pagina pubblica (Homepage)
+| Homepage pubblica
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return view('pages.welcome');
-})->name('welcome');
+Route::get('/', fn() => view('pages.welcome'))->name('welcome');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -61,14 +108,10 @@ Route::get('/db-test', function () {
     }
 });
 
+
 /*
 |--------------------------------------------------------------------------
-| Area Riservata (solo utenti loggati)
+| 404 Fallback
 |--------------------------------------------------------------------------
 */
-
-//404 Handling
-Route::fallback(function () {
-    return response()
-        ->view('pages.not-found', [], 404);
-});
+Route::fallback(fn() => response()->view('pages.not-found', [], 404));

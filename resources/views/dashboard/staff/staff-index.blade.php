@@ -3,92 +3,71 @@
 @section('content')
 <div class="uo-dashboard container-fluid">
 
-    {{-- HERO --}}
-  <div class="mb-4">
-    <h1 class="uo-section-title mb-1">Gestione Staff</h1>
-    <p class="text-secondary">CREW MANAGEMENT — UNDERGROUND OPS</p>
-</div>
-    {{-- Quick Actions --}}
+    <div class="mb-4">
+        <h1 class="uo-section-title mb-1">Gestione Staff</h1>
+        <p class="text-secondary">CREW MANAGEMENT — UNDERGROUND OPS</p>
+    </div>
+
     <div class="uo-quick-actions mb-4">
         <a href="{{ route('admin.staff.create') }}" class="uo-dashboard-btn">
             + Nuovo Staff
         </a>
     </div>
 
-    {{-- SUCCESS MESSAGE --}}
-    @if(session('success'))
-        <div class="alert alert-success mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
+    <x-uo-table
+        :headers="['#','Nome','Tipo','Telefono','Attivo','Utente']"
+        :columns="[5,25,10,15,10,25]"
+        actions="true"
+    >
+        @foreach($staff as $member)
+            <tr>
+                <td>{{ $member->id }}</td>
 
-    {{-- STAFF LIST --}}
-    <div class="uo-section">
-        <h2 class="uo-section-title mb-4">Team Attuale</h2>
+                <td class="fw-bold">{{ $member->stage_name }}</td>
 
-        <div class="table-responsive">
-            <table class="table table-dark table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nome / Stage Name</th>
-                        <th>Tipo</th>
-                        <th>Telefono</th>
-                        <th>Attivo</th>
-                        <th>Utente collegato</th>
-                    </tr>
-                </thead>
+                <td>
+                    @if($member->is_external)
+                        <span class="uo-badge uo-badge-draft">Esterno</span>
+                    @else
+                        <span class="uo-badge uo-badge-active">Registrato</span>
+                    @endif
+                </td>
 
-                <tbody>
-                    @forelse($staff as $member)
-                        <tr>
-                            <td>{{ $member->id }}</td>
+                <td>{{ $member->phone ?? '-' }}</td>
 
-                            <td class="fw-bold text-white">
-                                {{ $member->stage_name }}
-                            </td>
+                <td>
+                    @if($member->is_active)
+                        <span class="uo-badge uo-badge-active">Attivo</span>
+                    @else
+                        <span class="uo-badge uo-badge-cancelled">Inattivo</span>
+                    @endif
+                </td>
 
-                            <td>
-                                @if($member->is_external)
-                                    <span class="uo-badge uo-badge-draft">Esterno</span>
-                                @else
-                                    <span class="uo-badge uo-badge-active">Registrato</span>
-                                @endif
-                            </td>
+                <td>{{ $member->user?->email ?? '-' }}</td>
 
-                            <td>{{ $member->phone ?? '-' }}</td>
+                {{-- AZIONI --}}
+                <td class="uo-actions">
 
-                            <td>
-                                @if($member->is_active)
-                                    <span class="uo-badge uo-badge-active">Attivo</span>
-                                @else
-                                    <span class="uo-badge uo-badge-cancelled">Inattivo</span>
-                                @endif
-                            </td>
+                    {{-- EDIT --}}
+                    <a href="{{ route('admin.staff.edit', $member) }}"
+                       class="uo-action-btn uo-edit">✏️</a>
 
-                            <td>
-                                {{ $member->user?->email ?? '-' }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center text-secondary py-4">
-                                Nessuno staff presente.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
+                    {{-- DELETE --}}
+                    <form action="{{ route('admin.staff.destroy', $member) }}"
+                          method="POST" class="d-inline">
+                        @csrf
+                        @method('DELETE')
+                        <button class="uo-action-btn uo-delete">🗑️</button>
+                    </form>
 
-            </table>
-        </div>
-<div class="mt-3 uo-pagination ">
+                </td>
 
-@include('components.pagination', ['paginator' => $staff])
+            </tr>
+        @endforeach
+    </x-uo-table>
 
-
-
-
-</div>
+    <div class="mt-4 uo-pagination">
+        @include('components.pagination', ['paginator' => $staff])
     </div>
 
 </div>
