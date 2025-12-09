@@ -70,8 +70,9 @@
     <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="d-inline">
         @csrf
         @method('DELETE')
-        <button class="uo-action-icon delete">
+        <button type="button" class="uo-action-icon delete bar-delete">
             @include('icons.delete')
+            <span class="delete-bar"></span>
         </button>
     </form>
 

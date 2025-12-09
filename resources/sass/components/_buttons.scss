@@ -150,3 +150,44 @@
 
 
 }
+
+/* ============================
+   DELETE HOLD GAUGE (NEON BAR)
+============================ */
+
+.bar-delete {
+    position: relative;
+    overflow: hidden;
+}
+
+/* BAR BASE (inizio a 0%) */
+.bar-delete .delete-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    /* spessore */
+    width: 0%;
+    background: linear-gradient(90deg, #ff2d2d, #ff9a9a);
+    box-shadow: 0 0 6px rgba(255, 60, 60, 0.8);
+    pointer-events: none;
+    opacity: 0;
+    /* invisibile finché non è in hold */
+}
+
+/* QUANDO SI TIENE PREMUTO */
+.bar-delete.holding .delete-bar {
+    opacity: 1;
+    animation: delete-progress var(--holdTime, 1500ms) linear forwards;
+}
+
+/* ANIMAZIONE DI RIEMPIMENTO */
+@keyframes delete-progress {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}

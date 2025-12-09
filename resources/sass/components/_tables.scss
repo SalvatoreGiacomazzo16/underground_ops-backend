@@ -129,6 +129,7 @@
     background: rgba(255, 50, 50, 0.20) !important;
     border: 1px solid #ff4343 !important;
     color: #ff7777 !important;
+    font-size: 0.59rem;
 }
 
 
@@ -201,9 +202,4 @@
 #uo-events-table .uo-actions .uo-action-btn {
     padding: 4px 10px;
     font-size: 0.75rem;
-}
-
-#uo-events-table .uo-actions span {
-    display: none;
-    /* mostra SOLO l'icona */
 }
