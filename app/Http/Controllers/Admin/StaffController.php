@@ -10,120 +10,142 @@ use App\Models\User;
 
 class StaffController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:manage-staff');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | INDEX
+    |--------------------------------------------------------------------------
+    */
     public function index()
     {
-  $staff = StaffProfile::with('user')
-            ->orderByDesc('created_at')
+        $staff = StaffProfile::orderByDesc('created_at')
             ->paginate(15);
 
-      return view('dashboard.staff.staff-index', compact('staff'));
+        return view('dashboard.staff.staff-index', compact('staff'));
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE
+    |--------------------------------------------------------------------------
+    */
     public function create()
     {
-        // Utenti che ancora NON hanno uno staff_profile
-        $users = User::whereDoesntHave('staffProfile')
-            ->orderBy('name')
-            ->get();
-      return view('dashboard.staff.staff-create', compact('users'));
-    }
-public function store(Request $request)
-{
-    $data = $request->validate([
-        'staff_type' => 'required|in:registered,external',
-        'user_id'    => 'nullable|exists:users,id',
-
-        'stage_name' => 'nullable|string|max:255',
-        'phone'      => 'nullable|string|max:255',
-        'bio'        => 'nullable|string',
-        'skills'     => 'nullable|string', // comma-separated
-
-        'is_active'  => 'sometimes|boolean',
-        'notes'      => 'nullable|string',
-    ]);
-
-    // ------ FIX QUI (era $validated) ------
-    $skillsArray = null;
-    if (!empty($data['skills'])) {
-        $skillsArray = collect(explode(',', $data['skills']))
-            ->map(fn ($s) => trim($s))
-            ->filter()
-            ->values()
-            ->toArray();
+        return view('dashboard.staff.staff-create');
     }
 
-    // ------ FIX QUI (era $validated) ------
-    if ($data['staff_type'] === 'registered') {
-        $user = User::findOrFail($data['user_id']);
-
-        $staff = StaffProfile::create([
-            'user_id'    => $user->id,
-            'stage_name' => $data['stage_name'] ?? $user->name,
-            'phone'      => $data['phone'] ?? null,
-            'bio'        => $data['bio'] ?? null,
-            'skills'     => $skillsArray,
-            'is_external'=> 0,
-            'is_active'  => $request->boolean('is_active'),
-            'notes'      => $data['notes'] ?? null,
+    /*
+    |--------------------------------------------------------------------------
+    | STORE
+    |--------------------------------------------------------------------------
+    */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'stage_name' => 'required|string|max:255',
+            'role'       => 'required|string|max:255',
+            'phone'      => 'nullable|string|max:255',
+            'bio'        => 'nullable|string',
+            'skills'     => 'nullable|string', // comma-separated string
+            'is_active'  => 'sometimes|boolean',
+            'notes'      => 'nullable|string',
         ]);
-    } else {
-        $staff = StaffProfile::create([
-            'user_id'    => null,
+
+        // Convert skills string → array
+        $skillsArray = null;
+        if (!empty($data['skills'])) {
+            $skillsArray = collect(explode(',', $data['skills']))
+                ->map(fn ($s) => trim($s))
+                ->filter()
+                ->values()
+                ->toArray();
+        }
+
+        StaffProfile::create([
             'stage_name' => $data['stage_name'],
+            'role'       => $data['role'],
             'phone'      => $data['phone'] ?? null,
             'bio'        => $data['bio'] ?? null,
             'skills'     => $skillsArray,
-            'is_external'=> 1,
             'is_active'  => $request->boolean('is_active'),
             'notes'      => $data['notes'] ?? null,
         ]);
+
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Profilo staff creato con successo.');
     }
 
-    return redirect()
-        ->route('admin.staff.index')
-        ->with('success', 'Profilo staff creato con successo.');
-}
-
-
-
+    /*
+    |--------------------------------------------------------------------------
+    | EDIT
+    |--------------------------------------------------------------------------
+    */
     public function edit(StaffProfile $staff)
     {
-        $users = User::orderBy('name')->get();
-
-        // serve per ricostruire la stringa "HTML, Graphic, DJ" ecc
+        // Per ricostruire stringa skills: DJ, PR, ecc.
         $skillsString = $staff->skills ? implode(', ', $staff->skills) : '';
 
-        return view('admin.staff.edit', compact('staff', 'users', 'skillsString'));
+        return view('dashboard.staff.staff-edit', compact('staff', 'skillsString'));
     }
 
-   public function update(Request $request, StaffProfile $staff)
-{
-    $data = $request->validate([
-        'stage_name' => 'sometimes|string|max:255',
-        'phone' => 'nullable|string',
-        'bio' => 'nullable|string',
-        'skills' => 'nullable|array',
-        'notes' => 'nullable|string',
-    ]);
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE
+    |--------------------------------------------------------------------------
+    */
+    public function update(Request $request, StaffProfile $staff)
+    {
+        $data = $request->validate([
+            'stage_name' => 'required|string|max:255',
+            'role'       => 'required|string|max:255',
+            'phone'      => 'nullable|string|max:255',
+            'bio'        => 'nullable|string',
+            'skills'     => 'nullable|string',
+            'is_active'  => 'sometimes|boolean',
+            'notes'      => 'nullable|string',
+        ]);
 
-    $staff->update($data);
+        // Convert skills back to array
+        $skillsArray = null;
+        if (!empty($data['skills'])) {
+            $skillsArray = collect(explode(',', $data['skills']))
+                ->map(fn ($s) => trim($s))
+                ->filter()
+                ->values()
+                ->toArray();
+        }
 
-    return redirect()->route('admin.staff.index')
-                     ->with('success', 'Profilo staff aggiornato.');
-}
+        $staff->update([
+            'stage_name' => $data['stage_name'],
+            'role'       => $data['role'],
+            'phone'      => $data['phone'] ?? null,
+            'bio'        => $data['bio'] ?? null,
+            'skills'     => $skillsArray,
+            'is_active'  => $request->boolean('is_active'),
+            'notes'      => $data['notes'] ?? null,
+        ]);
 
-public function destroy(StaffProfile $staff)
-{
-    $staff->delete();
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Profilo staff aggiornato.');
+    }
 
-    return redirect()->route('admin.staff.index')
-                     ->with('success', 'Profilo staff rimosso.');
-}
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE
+    |--------------------------------------------------------------------------
+    */
+    public function destroy(StaffProfile $staff)
+    {
+        $staff->delete();
 
-
-    public function __construct()
-{
-    $this->middleware('can:manage-staff');
-}
-
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Profilo staff rimosso.');
+    }
 }

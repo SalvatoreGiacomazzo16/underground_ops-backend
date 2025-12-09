@@ -1,22 +1,18 @@
-<div class="uo-table-wrapper">
+<div class="uo-table-wrapper {{ $wrapperClass ?? '' }}" id="{{ $wrapperId ?? '' }}">
+    <table class="uo-table {{ $tableClass ?? '' }}">
 
-    <table class="uo-table">
-
-        {{-- COLGROUP dinamico --}}
-        @if(isset($columns) && is_array($columns))
+        @if(!empty($columns) && is_array($columns))
             <colgroup>
                 @foreach($columns as $width)
                     <col style="width: {{ $width }}%;">
                 @endforeach
 
-                {{-- Colonna azioni --}}
                 @if(!empty($actions))
-                    <col style="width: 10%;">
+                    <col style="width: {{ $actionsWidth ?? 10 }}%;">
                 @endif
             </colgroup>
         @endif
 
-        {{-- HEADER --}}
         <thead>
             <tr>
                 @foreach($headers as $head)
@@ -24,16 +20,14 @@
                 @endforeach
 
                 @if(!empty($actions))
-                    <th>Azioni</th>
+                    <th class="text-end">Azioni</th>
                 @endif
             </tr>
         </thead>
 
-        {{-- BODY --}}
         <tbody>
             {{ $slot }}
         </tbody>
 
     </table>
-
 </div>

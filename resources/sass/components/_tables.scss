@@ -1,31 +1,36 @@
 /* ============================
-   TABLE WRAPPER — UNIFICATO
+   TABLE WRAPPER
 ============================ */
 
 .uo-table-wrapper {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     background: rgba(10, 0, 25, 0.55);
     border-radius: 12px;
     margin-top: 20px;
     padding: 0;
-    /* nessun offset */
     box-shadow: 0 0 22px rgba(201, 22, 154, 0.15);
+    box-sizing: border-box;
 }
 
 
 /* ============================
-   TABLE — UNDERGROUND OPS
+   TABLE BASE
 ============================ */
 
 .uo-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed !important;
+    table-layout: auto;
+    /* ← PERFETTO per contenuti variabili */
 }
 
 
-/* === HEADER (TR con gradient unico) === */
+/* ============================
+   HEADER
+============================ */
+
 .uo-table thead tr {
     background: linear-gradient(90deg,
             rgba(140, 20, 130, 0.75),
@@ -34,30 +39,32 @@
 
 .uo-table thead th {
     padding: 14px 18px;
-    color: #fff;
     font-size: 0.9rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: transparent !important;
+    color: #fff;
     white-space: nowrap;
-    overflow: hidden;
+    /* ← evita allungamenti inutili */
 }
 
 
-/* === BODY CELLS === */
+/* ============================
+   BODY CELLS
+============================ */
+
 .uo-table tbody td {
     padding: 14px 18px;
     color: #ddd;
     background: rgba(20, 0, 30, 0.45);
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+    /* ← niente a capo in desktop */
     overflow: hidden;
     text-overflow: ellipsis;
+    /* ← contenuto elegante */
 }
 
 
-/* FIRST COLUMN: ID */
+/* Prima colonna (ID) */
 .uo-table tbody td:first-child {
     color: #c9169a;
     font-weight: 700;
@@ -65,62 +72,63 @@
 
 
 /* ============================
-   BADGES — UNDERGROUND OPS
+   BADGES
 ============================ */
 
+.uo-badge-default {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.20) !important;
+    color: #ffffff !important;
+}
+
+.uo-role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    border-radius: 999px;
+    border: 1px solid #00eaff;
+    /* azzurro neon */
+    color: #00eaff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: rgba(0, 234, 255, 0.10);
+    /* glow azzurro */
+    box-shadow: 0 0 12px rgba(0, 234, 255, 0.35);
+}
+
+/* BASE PER TUTTI GLI ALTRI BADGE (STATUS, ECC.) */
 .uo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 6px 14px;
     border-radius: 50px;
-    font-size: 0.75rem;
+    font-size: 0.60rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    display: inline-block;
     white-space: nowrap;
-    backdrop-filter: blur(2px);
 }
 
-/* ACTIVE / PUBLISHED */
+/* STATUS COLORS - FORZIAMO I COLORI */
 .uo-badge-active,
 .uo-badge-published {
-    background: rgba(0, 200, 120, 0.18);
-    border: 1px solid #00c878;
-    color: #00ffae;
-    box-shadow: 0 0 6px rgba(0, 255, 170, 0.35);
+    background: rgba(0, 200, 120, 0.18) !important;
+    border: 1px solid #00c878 !important;
+    color: #00ffae !important;
 }
 
-/* DRAFT */
 .uo-badge-draft {
-    background: rgba(255, 193, 7, 0.18);
-    border: 1px solid #ffc107;
-    color: #ffd86a;
-    box-shadow: 0 0 6px rgba(255, 195, 64, 0.30);
+    background: rgba(255, 193, 7, 0.18) !important;
+    border: 1px solid #ffc107 !important;
+    color: #ffd86a !important;
 }
 
-/* CANCELLED */
 .uo-badge-cancelled {
-    background: rgba(255, 50, 50, 0.20);
-    border: 1px solid #ff4343;
-    color: #ff7777;
-    box-shadow: 0 0 6px rgba(255, 60, 60, 0.30);
-}
-
-/* ARCHIVED */
-.uo-badge-archived {
-    background: rgba(120, 120, 120, 0.18);
-    border: 1px solid #aaa;
-    color: #ddd;
-    box-shadow: 0 0 4px rgba(160, 160, 160, 0.25);
-}
-
-
-/* ============================
-   ⚠️ DESKTOP FIX — BLOCCA L'ARTEFATTO
-============================ */
-
-/* Questo impedisce a ::before di apparire fuori dal mobile mode */
-.uo-table tbody tr::before {
-    content: none !important;
+    background: rgba(255, 50, 50, 0.20) !important;
+    border: 1px solid #ff4343 !important;
+    color: #ff7777 !important;
 }
 
 
@@ -141,8 +149,9 @@
     .uo-table td {
         display: block;
         width: 100%;
+        white-space: normal !important;
+        /* ← mobile può andare a capo */
         overflow: visible !important;
-        text-overflow: clip !important;
     }
 
     .uo-table tr {
@@ -150,23 +159,51 @@
         background: rgba(20, 0, 30, 0.55);
         padding: 14px 16px;
         border-radius: 12px;
-        box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);
     }
 
     .uo-table td {
         padding: 6px 0 !important;
         border-bottom: none !important;
-        overflow: visible !important;
-        white-space: normal !important;
     }
 
     .uo-table td::before {
         content: attr(data-label);
         font-size: 0.75rem;
-        color: #c9169a;
         font-weight: 700;
-        text-transform: uppercase;
+        color: #c9169a;
         margin-bottom: 4px;
         display: block;
     }
+}
+
+#uo-events-table .uo-table {
+    table-layout: fixed;
+}
+
+#uo-events-table .uo-table-wrapper {
+    overflow-x: auto;
+}
+
+#uo-events-table colgroup col:nth-child(5) {
+    width: 25% !important;
+}
+
+#uo-events-table colgroup col:nth-child(6) {
+    width: 10% !important;
+}
+
+#uo-events-table .uo-table-wrapper {
+    overflow-x: auto !important;
+    display: block;
+    max-width: 100%;
+}
+
+#uo-events-table .uo-actions .uo-action-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
+#uo-events-table .uo-actions span {
+    display: none;
+    /* mostra SOLO l'icona */
 }

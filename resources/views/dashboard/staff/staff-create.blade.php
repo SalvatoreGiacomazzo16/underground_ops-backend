@@ -27,30 +27,17 @@
 
             <div class="row g-4">
 
-                {{-- Tipo staff --}}
+                {{-- RUOLO --}}
                 <div class="col-md-6 input-field">
-                    <label for="staff_type">Tipo di Staff</label>
-                    <select id="staff_type" name="staff_type" required>
-                        <option value="registered" {{ old('staff_type') === 'registered' ? 'selected' : '' }}>
-                            Utente Registrato
-                        </option>
-                        <option value="external" {{ old('staff_type') === 'external' ? 'selected' : '' }}>
-                            Staff Esterno
-                        </option>
-                    </select>
-                </div>
-
-                {{-- Utente registrato (solo se staff_type = registered) --}}
-                <div class="col-md-6 input-field" id="user_wrapper">
-                    <label for="user_id">Utente Registrato</label>
-                    <select name="user_id" id="user_id">
-                        <option value="">-- Seleziona utente --</option>
-                        @foreach($users as $u)
-                            <option value="{{ $u->id }}" {{ old('user_id') == $u->id ? 'selected' : '' }}>
-                                {{ $u->name }} ({{ $u->email }})
-                            </option>
-                        @endforeach
-                    </select>
+                    <label for="role">Ruolo</label>
+                    <input
+                        type="text"
+                        id="role"
+                        name="role"
+                        value="{{ old('role') }}"
+                        placeholder="Cameriere, Barman, Fonico, Security…"
+                        required
+                    >
                 </div>
 
                 {{-- Stage Name --}}
@@ -61,7 +48,8 @@
                         id="stage_name"
                         name="stage_name"
                         value="{{ old('stage_name') }}"
-                        placeholder="DJ KRYPT, PR Giada, Security Mario…">
+                        placeholder="DJ KRYPT, PR Giada, Security Mario…"
+                    >
                 </div>
 
                 {{-- Telefono --}}
@@ -71,7 +59,8 @@
                         type="text"
                         id="phone"
                         name="phone"
-                        value="{{ old('phone') }}">
+                        value="{{ old('phone') }}"
+                    >
                 </div>
 
                 {{-- Bio --}}
@@ -81,7 +70,8 @@
                         id="bio"
                         name="bio"
                         rows="3"
-                        placeholder="Breve descrizione dello staff…">{{ old('bio') }}</textarea>
+                        placeholder="Breve descrizione dello staff…"
+                    >{{ old('bio') }}</textarea>
                 </div>
 
                 {{-- Skills --}}
@@ -92,7 +82,8 @@
                         id="skills"
                         name="skills"
                         value="{{ old('skills') }}"
-                        placeholder="DJ, PR, Tecnico luci…">
+                        placeholder="DJ, PR, Tecnico luci…"
+                    >
                 </div>
 
                 {{-- Attivo --}}
@@ -104,7 +95,8 @@
                             id="is_active"
                             name="is_active"
                             value="1"
-                            {{ old('is_active', 1) ? 'checked' : '' }}>
+                            {{ old('is_active', 1) ? 'checked' : '' }}
+                        >
                         <label class="form-check-label ms-2" for="is_active">
                             Attivo
                         </label>
@@ -118,7 +110,8 @@
                         id="notes"
                         name="notes"
                         rows="3"
-                        placeholder="Aggiungi eventuali note…">{{ old('notes') }}</textarea>
+                        placeholder="Aggiungi eventuali note…"
+                    >{{ old('notes') }}</textarea>
                 </div>
 
             </div>
@@ -130,24 +123,5 @@
         </form>
     </div>
 </div>
-
-{{-- JS per abilitare/disabilitare lista utenti --}}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const typeSelect = document.getElementById('staff_type');
-    const userWrapper = document.getElementById('user_wrapper');
-
-    function toggleUserInput() {
-        if (typeSelect.value === 'registered') {
-            userWrapper.style.display = 'block';
-        } else {
-            userWrapper.style.display = 'none';
-        }
-    }
-
-    typeSelect.addEventListener('change', toggleUserInput);
-    toggleUserInput();
-});
-</script>
 
 @endsection

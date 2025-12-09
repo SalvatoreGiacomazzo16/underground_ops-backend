@@ -1,0 +1,87 @@
+/* ============================================
+   CYBER-PLASTIC VAPORWAVE ICON BUTTONS
+   Glossy, neon, semi-liquid, high-end aesthetic
+============================================ */
+
+.uo-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* BASE CONTAINER */
+.uo-action-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* cyber-plastic glass */
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(6px);
+
+    /* outline neon morbido */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    /* riflesso interno liquido */
+    box-shadow:
+        inset 0 0 6px rgba(255, 255, 255, 0.12),
+        0 0 10px rgba(255, 0, 255, 0.12);
+
+    cursor: pointer;
+    transition: 0.28s cubic-bezier(.25, .8, .25, 1);
+}
+
+/* ICONA */
+.uo-action-icon svg {
+    width: 18px;
+    height: 18px;
+    transition: 0.28s ease;
+}
+
+
+/* ============================================
+   EDIT — Neon Yellow + Vaporwave gloss
+============================================ */
+.uo-action-icon.edit svg {
+    stroke: #ffd86a;
+}
+
+.uo-action-icon.edit:hover {
+    /* glow giallo + riflesso liquido */
+    box-shadow:
+        inset 0 0 6px rgba(255, 255, 255, 0.22),
+        0 0 14px rgba(255, 220, 120, 0.55),
+        0 0 24px rgba(255, 200, 40, 0.35);
+    border-color: #ffd86a;
+    transform: translateY(-2px) scale(1.05);
+}
+
+.uo-action-icon.edit:hover svg {
+    stroke: #ffeeb3;
+}
+
+
+/* ============================================
+   DELETE — Neon Red Liquid Glow
+============================================ */
+.uo-action-icon.delete svg {
+    stroke: #ff6c6c;
+}
+
+.uo-action-icon.delete:hover {
+    /* glow rosso liquido + riflesso */
+    box-shadow:
+        inset 0 0 6px rgba(255, 255, 255, 0.22),
+        0 0 14px rgba(255, 100, 100, 0.55),
+        0 0 24px rgba(255, 40, 40, 0.35);
+    border-color: #ff6c6c;
+    transform: translateY(-2px) scale(1.05);
+}
+
+.uo-action-icon.delete:hover svg {
+    stroke: #ff9a9a;
+}

@@ -85,3 +85,68 @@
         }
     }
 }
+
+/* ============================
+   ACTION BUTTONS — DESKTOP
+============================ */
+
+.uo-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.uo-action-btn {
+    padding: 6px 14px;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.25s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* — EDIT (giallo neon) — */
+.uo-edit {
+    background: rgba(255, 193, 7, 0.18);
+    color: #ffdd57;
+    border-color: #ffdd57;
+}
+
+.uo-edit:hover {
+    box-shadow: 0 0 10px rgba(255, 208, 80, 0.55);
+}
+
+/* — DELETE (rosso neon) — */
+.uo-delete {
+    background: rgba(255, 50, 50, 0.20);
+    color: #ff5b5b;
+    border-color: #ff5b5b;
+}
+
+.uo-delete:hover {
+    box-shadow: 0 0 10px rgba(255, 70, 70, 0.55);
+}
+
+@media (max-width: 768px) {
+
+    /* pulsanti senza testo, solo icone */
+    .uo-action-btn {
+        padding: 8px;
+        font-size: 1rem;
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+
+}

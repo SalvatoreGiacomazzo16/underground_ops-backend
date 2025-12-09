@@ -10,20 +10,18 @@ class StaffProfile extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'stage_name',
+        'role',       // 🆕 NUOVO CAMPO
         'phone',
         'bio',
         'skills',
-        'is_external',
         'is_active',
-        'notes',
+        'notes'
     ];
 
     protected $casts = [
-        'skills' => 'array',
-         'is_external' => 'boolean',
-        'is_active'   => 'boolean',
+        'skills'    => 'array',
+        'is_active' => 'boolean',
     ];
 
     /*
@@ -32,6 +30,8 @@ class StaffProfile extends Model
     |--------------------------------------------------------------------------
     */
 
+    // Lasciamo user() nel caso serva in futuro.
+    // Ma l'interfaccia non lo usa più per la creazione staff.
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -40,8 +40,8 @@ class StaffProfile extends Model
     public function events()
     {
         return $this->belongsToMany(Event::class, 'event_staff')
-        ->withPivot('role_in_event', 'fee', 'checkin_time', 'checkout_time', 'notes')
-        ->withTimestamps();
+            ->withPivot('role_in_event', 'fee', 'checkin_time', 'checkout_time', 'notes')
+            ->withTimestamps();
     }
 
     public function eventAssignments()
