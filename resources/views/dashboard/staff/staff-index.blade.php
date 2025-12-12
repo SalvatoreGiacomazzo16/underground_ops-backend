@@ -17,67 +17,63 @@
     </div>
 
     {{-- STAFF TABLE --}}
-    <x-uo-table
-        :headers="['#','Nome','Ruolo','Telefono','Attivo']"
-        :columns="[5,25,20,20,10]"
-        actions="true"
-    >
-        @foreach($staff as $member)
-            <tr>
+<x-uo-table
+    :headers="['#','Nome','Ruolo','Telefono','Attivo']"
+    :columns="[5,25,20,20,10]"
+    actions="true"
+>
+    @forelse($staff as $member)
+        <tr>
 
-                {{-- ID --}}
-                <td>{{ $member->id }}</td>
+            <td>{{ $member->id }}</td>
 
-                {{-- Nome --}}
-                <td class="fw-bold">{{ $member->stage_name }}</td>
+            <td class="fw-bold">{{ $member->stage_name }}</td>
 
-                {{-- Ruolo --- Badge unico azzurro neon --}}
-                <td>
-                    @if($member->role)
-                        <span class="uo-role-badge">
-                            {{ strtoupper($member->role) }}
-                        </span>
-                    @else
-                        <span class="text-secondary">-</span>
-                    @endif
-                </td>
+            <td>
+                @if($member->role)
+                    <span class="uo-role-badge">
+                        {{ strtoupper($member->role) }}
+                    </span>
+                @else
+                    <span class="text-secondary">-</span>
+                @endif
+            </td>
 
-                {{-- Telefono --}}
-                <td>{{ $member->phone ?? '-' }}</td>
+            <td>{{ $member->phone ?? '-' }}</td>
 
-                {{-- Attivo --}}
-                <td>
-                    @if($member->is_active)
-                        <span class="uo-badge uo-badge-active">Attivo</span>
-                    @else
-                        <span class="uo-badge uo-badge-cancelled">Inattivo</span>
-                    @endif
-                </td>
+            <td>
+                @if($member->is_active)
+                    <span class="uo-badge uo-badge-active">Attivo</span>
+                @else
+                    <span class="uo-badge uo-badge-cancelled">Inattivo</span>
+                @endif
+            </td>
 
-            {{-- AZIONI --}}
-<td class="uo-actions">
+            <td class="uo-actions">
+                <a href="{{ route('admin.staff.edit', $member) }}" class="uo-action-icon edit">
+                    @include('icons.edit')
+                </a>
 
-    {{-- EDIT --}}
-    <a href="{{ route('admin.staff.edit', $staff) }}" class="uo-action-icon edit">
-        @include('icons.edit')
-    </a>
+                <form action="{{ route('admin.staff.destroy', $member) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" class="uo-action-icon delete bar-delete">
+                        @include('icons.delete')
+                        <span class="delete-bar"></span>
+                    </button>
+                </form>
+            </td>
 
-    {{-- DELETE --}}
-    <form action="{{ route('admin.staff.destroy', $staff) }}" method="POST" class="d-inline">
-        @csrf
-        @method('DELETE')
-        <button type="button" class="uo-action-icon delete bar-delete">
-            @include('icons.delete')
-             <span class="delete-bar"></span>
-        </button>
-    </form>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="6" class="text-center text-secondary py-4">
+                Nessuno staff aggiunto.
+            </td>
+        </tr>
+    @endforelse
+</x-uo-table>
 
-</td>
-
-
-            </tr>
-        @endforeach
-    </x-uo-table>
 
     {{-- PAGINATION --}}
     <div class="mt-4 uo-pagination">

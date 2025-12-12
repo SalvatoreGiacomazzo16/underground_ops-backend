@@ -5,16 +5,18 @@
 
     <h1 class="uo-section-title mb-4">Modifica Evento</h1>
 
-    <form action="{{ route('admin.events.update', $event) }}" method="POST">
+    <form action="{{ route('admin.events.update', $event->id) }}" method="POST">
         @csrf
         @method('PUT')
 
-        @include('dashboard.events.partials.form-fields', [
-            'event' => $event,
-            'locations' => $locations
-        ])
+      @include('dashboard.events.partials.events-form', [
+    'event' => $event,
+    'locations' => $locations
+])
 
-        <button class="uo-dashboard-btn mt-3">Salva Modifiche</button>
+        <button class="uo-btn-primary mt-4">
+            Salva Modifiche
+        </button>
     </form>
 
 </div>

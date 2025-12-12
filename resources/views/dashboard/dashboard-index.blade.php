@@ -99,11 +99,11 @@
     </a>
 
     {{-- LOCATION --}}
-    <a href="#" class="uo-dashboard-btn">
-        Gestione Location
-    </a>
+   <a href="{{ route('admin.locations.index') }}" class="uo-dashboard-btn">
+    Gestione Location
+</a>
 
-    {{-- STAFF --}}
+
    {{-- STAFF --}}
 <a href="{{ route('admin.staff.create') }}" class="uo-dashboard-btn">
    + Staff

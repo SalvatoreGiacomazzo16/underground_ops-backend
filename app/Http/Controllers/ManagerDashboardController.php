@@ -4,33 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Location;
-use App\Models\User;
+use App\Models\StaffProfile;
+use Illuminate\Support\Facades\Auth;
 
 class ManagerDashboardController extends Controller
 {
-   public function index()
-{
-    $userId = auth()->id();
+    public function index()
+    {
+        $userId = Auth::id();
 
-    // Eventi creati da questo utente
-    $events = Event::where('created_by', $userId)
-                    ->with('location')
-                    ->latest()
-                    ->get();
+        $totalEvents = Event::where('created_by', $userId)->count();
 
-    // KPI
-    $totalEvents   = $events->count();
-    $activeEvents  = $events->where('status', 'published')->count();
-    $locationsCount = \App\Models\Location::count();
-    $staffCount = \App\Models\User::count(); // o il tuo modello staff
+        $activeEvents = Event::where('created_by', $userId)
+            ->where('status', 'published')
+            ->count();
 
-    return view('dashboard.dashboard-index', compact(
-        'events',
-        'totalEvents',
-        'activeEvents',
-        'locationsCount',
-        'staffCount'
-    ));
-}
+        $totalLocations = Location::where('created_by', $userId)->count();
 
+        $staffCount = StaffProfile::where('user_id', $userId)->count();
+
+        $events = Event::with('location')
+            ->where('created_by', $userId)
+            ->orderByDesc('start_datetime')
+            ->get();
+
+        return view('dashboard.dashboard-index', compact(
+            'totalEvents',
+            'activeEvents',
+            'totalLocations',
+            'staffCount',
+            'events'
+        ));
+    }
 }

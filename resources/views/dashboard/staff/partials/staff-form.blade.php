@@ -1,5 +1,3 @@
-{{-- resources/views/dashboard/staff/partials/form.blade.php --}}
-
 @php
     /** @var \App\Models\StaffProfile|null $staff */
     $staff = $staff ?? null;
@@ -7,15 +5,28 @@
 
 <div class="row g-4">
 
+    {{-- RUOLO --}}
+    <div class="col-md-6 input-field">
+        <label for="role">Ruolo</label>
+        <input
+            type="text"
+            id="role"
+            name="role"
+            value="{{ old('role', $staff->role ?? '') }}"
+            placeholder="Cameriere, Barman, Fonico, Security…"
+            required
+        >
+    </div>
+
     {{-- Stage Name --}}
     <div class="col-md-6 input-field">
         <label for="stage_name">Stage Name</label>
         <input
+            type="text"
             id="stage_name"
             name="stage_name"
-            type="text"
-            placeholder="DJ KRYPT, PR Giada, Security Mario…"
             value="{{ old('stage_name', $staff->stage_name ?? '') }}"
+            placeholder="DJ KRYPT, PR Giada, Security Mario…"
         >
     </div>
 
@@ -23,9 +34,9 @@
     <div class="col-md-6 input-field">
         <label for="phone">Telefono</label>
         <input
+            type="text"
             id="phone"
             name="phone"
-            type="text"
             value="{{ old('phone', $staff->phone ?? '') }}"
         >
     </div>
@@ -43,15 +54,12 @@
 
     {{-- Skills --}}
     @php
-        // Se in edit hai l'array nel DB, lo trasformiamo in stringa "DJ, PR, Tecnico luci"
-        $skillsString = old('skills');
-        if ($skillsString === null && isset($staff)) {
-            if (is_array($staff->skills)) {
-                $skillsString = implode(', ', $staff->skills);
-            } else {
-                $skillsString = $staff->skills ?? '';
-            }
-        }
+        $skillsString = old(
+            'skills',
+            isset($staff) && is_array($staff->skills ?? null)
+                ? implode(', ', $staff->skills)
+                : ($staff->skills ?? '')
+        );
     @endphp
 
     <div class="col-12 input-field">
@@ -60,17 +68,14 @@
             type="text"
             id="skills"
             name="skills"
-            placeholder="DJ, PR, Tecnico Luci…"
             value="{{ $skillsString }}"
+            placeholder="DJ, PR, Tecnico luci…"
         >
     </div>
 
     {{-- Attivo --}}
     @php
-        $isActive = old('is_active');
-        if ($isActive === null) {
-            $isActive = isset($staff) ? $staff->is_active : true;
-        }
+        $active = old('is_active', $staff->is_active ?? true);
     @endphp
 
     <div class="col-md-6 d-flex align-items-center">
@@ -81,15 +86,13 @@
                 id="is_active"
                 name="is_active"
                 value="1"
-                {{ $isActive ? 'checked' : '' }}
+                {{ $active ? 'checked' : '' }}
             >
-            <label class="form-check-label ms-2" for="is_active">
-                Attivo
-            </label>
+            <label class="form-check-label ms-2" for="is_active">Attivo</label>
         </div>
     </div>
 
-    {{-- Note interne --}}
+    {{-- Note --}}
     <div class="col-12 input-field">
         <label for="notes">Note interne</label>
         <textarea

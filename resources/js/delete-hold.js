@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function doAjaxDelete(btn) {
         const form = btn.closest("form");
-        const row = btn.closest("tr");
+        const row = btn.closest(".uo-location-card-v3") || btn.closest("tr");
         const url = form.action;
         const token = form.querySelector("input[name=_token]").value;
 
@@ -61,7 +61,28 @@ document.addEventListener("DOMContentLoaded", () => {
             // fade-out riga
             row.style.transition = "opacity .3s";
             row.style.opacity = "0";
-            setTimeout(() => row.remove(), 300);
+            setTimeout(() => {
+                row.remove();
+
+                // 🔥 CHECK: ci sono ancora location?
+                const remainingLocations = document.querySelectorAll(
+                    '.uo-location-card-v3:not(.uo-location-card-create)'
+                ).length;
+
+                // se NON ci sono più location → empty state
+                if (remainingLocations === 0) {
+                    // nascondi bottone sopra
+                    const dashboardBtn = document.querySelector('.uo-dashboard-btn');
+                    if (dashboardBtn) dashboardBtn.remove();
+
+                    // mostra la create card glass
+                    const createCard = document.querySelector('.uo-location-card-create');
+                    if (createCard) {
+                        createCard.closest('.col-md-6, .col-lg-4, .col-12')?.classList.remove('d-none');
+                    }
+                }
+
+            }, 300);
         }).catch(err => {
             console.error(err);
             alert("Errore durante l'eliminazione.");

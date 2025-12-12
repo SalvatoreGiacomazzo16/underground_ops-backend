@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\StaffProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class StaffController extends Controller
 {
@@ -15,34 +14,20 @@ class StaffController extends Controller
         $this->middleware('can:manage-staff');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | INDEX
-    |--------------------------------------------------------------------------
-    */
     public function index()
     {
-        $staff = StaffProfile::orderByDesc('created_at')
+        $staff = StaffProfile::where('user_id', Auth::id())
+            ->orderBy('stage_name')
             ->paginate(15);
 
         return view('dashboard.staff.staff-index', compact('staff'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE
-    |--------------------------------------------------------------------------
-    */
     public function create()
     {
         return view('dashboard.staff.staff-create');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | STORE
-    |--------------------------------------------------------------------------
-    */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -50,12 +35,12 @@ class StaffController extends Controller
             'role'       => 'required|string|max:255',
             'phone'      => 'nullable|string|max:255',
             'bio'        => 'nullable|string',
-            'skills'     => 'nullable|string', // comma-separated string
+            'skills'     => 'nullable|string',
             'is_active'  => 'sometimes|boolean',
             'notes'      => 'nullable|string',
         ]);
 
-        // Convert skills string → array
+        // skills string → array
         $skillsArray = null;
         if (!empty($data['skills'])) {
             $skillsArray = collect(explode(',', $data['skills']))
@@ -66,6 +51,7 @@ class StaffController extends Controller
         }
 
         StaffProfile::create([
+            'user_id'    => Auth::id(),  // FIX
             'stage_name' => $data['stage_name'],
             'role'       => $data['role'],
             'phone'      => $data['phone'] ?? null,
@@ -80,26 +66,19 @@ class StaffController extends Controller
             ->with('success', 'Profilo staff creato con successo.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | EDIT
-    |--------------------------------------------------------------------------
-    */
     public function edit(StaffProfile $staff)
     {
-        // Per ricostruire stringa skills: DJ, PR, ecc.
+        abort_if($staff->user_id !== Auth::id(), 403);
+
         $skillsString = $staff->skills ? implode(', ', $staff->skills) : '';
 
         return view('dashboard.staff.staff-edit', compact('staff', 'skillsString'));
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE
-    |--------------------------------------------------------------------------
-    */
     public function update(Request $request, StaffProfile $staff)
     {
+        abort_if($staff->user_id !== Auth::id(), 403);
+
         $data = $request->validate([
             'stage_name' => 'required|string|max:255',
             'role'       => 'required|string|max:255',
@@ -110,11 +89,10 @@ class StaffController extends Controller
             'notes'      => 'nullable|string',
         ]);
 
-        // Convert skills back to array
         $skillsArray = null;
         if (!empty($data['skills'])) {
             $skillsArray = collect(explode(',', $data['skills']))
-                ->map(fn ($s) => trim($s))
+                ->map(fn($s) => trim($s))
                 ->filter()
                 ->values()
                 ->toArray();
@@ -135,13 +113,10 @@ class StaffController extends Controller
             ->with('success', 'Profilo staff aggiornato.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | DELETE
-    |--------------------------------------------------------------------------
-    */
     public function destroy(StaffProfile $staff)
     {
+        abort_if($staff->user_id !== Auth::id(), 403);
+
         $staff->delete();
 
         return redirect()

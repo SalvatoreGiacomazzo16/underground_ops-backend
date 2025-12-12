@@ -11,6 +11,7 @@ class Location extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'name',
         'slug',
         'address',
@@ -24,7 +25,7 @@ class Location extends Model
         'contact_phone',
         'is_active',
         'notes',
-        'created_by'
+
     ];
 
     /*

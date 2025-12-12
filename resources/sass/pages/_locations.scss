@@ -1,0 +1,122 @@
+/* ============================
+   LOCATION CARD v3 — VENUE OPS
+============================ */
+
+.uo-location-card-v3 {
+    background: rgba(15, 0, 25, 0.65);
+    border: 1px solid rgba(200, 22, 154, 0.22);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: .28s ease;
+    position: relative;
+
+    &:hover {
+        transform: translateY(-4px);
+        border-color: rgba(200, 22, 154, 0.55);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, .6);
+    }
+}
+
+/* HEADER */
+.uo-location-header {
+    position: relative;
+}
+
+.uo-location-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.uo-location-city {
+    font-size: .85rem;
+    color: #aaa;
+}
+
+.uo-location-badge-primary {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 20px;
+    color: #0affc8;
+    border: 1px solid rgba(0, 255, 200, .6);
+    background: rgba(0, 255, 200, .12);
+}
+
+/* MICRO MAP */
+.uo-location-map {
+    height: 64px;
+    border-radius: 12px;
+    background:
+        radial-gradient(circle at center,
+            rgba(255, 255, 255, .12) 1px,
+            transparent 1px),
+        linear-gradient(180deg,
+            rgba(255, 255, 255, .04),
+            rgba(0, 0, 0, .35));
+    background-size: 16px 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.map-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #c9169a;
+    position: absolute;
+    top: 50%;
+    left: 55%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px rgba(201, 22, 154, .9);
+}
+
+.map-label {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    font-size: .6rem;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, .4);
+}
+
+/* BODY */
+.uo-location-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.uo-location-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: .85rem;
+}
+
+.uo-location-row .label {
+    color: #888;
+}
+
+.uo-location-row .value {
+    color: #ddd;
+    font-weight: 500;
+}
+
+/* FOOTER */
+.uo-location-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.uo-location-actions {
+    display: flex;
+    gap: 8px;
+}
