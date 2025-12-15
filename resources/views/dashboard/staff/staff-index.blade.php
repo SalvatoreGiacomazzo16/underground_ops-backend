@@ -22,56 +22,66 @@
     :columns="[5,25,20,20,10]"
     actions="true"
 >
-    @forelse($staff as $member)
-        <tr>
+   @forelse($staff as $member)
+<tr>
+    <td>{{ $member->id }}</td>
 
-            <td>{{ $member->id }}</td>
+    <td class="fw-semibold">
+        {{ $member->stage_name }}
+    </td>
 
-            <td class="fw-bold">{{ $member->stage_name }}</td>
+    <td>
+        {{ $member->role }}
+    </td>
 
-            <td>
-                @if($member->role)
-                    <span class="uo-role-badge">
-                        {{ strtoupper($member->role) }}
-                    </span>
-                @else
-                    <span class="text-secondary">-</span>
-                @endif
-            </td>
+    <td>
+        {{ $member->phone ?? '—' }}
+    </td>
 
-            <td>{{ $member->phone ?? '-' }}</td>
+    <td>
+        @if($member->is_active)
+            <span class="uo-badge uo-badge-active">ATTIVO</span>
+        @else
+            <span class="uo-badge uo-badge-draft">OFF</span>
+        @endif
+    </td>
 
-            <td>
-                @if($member->is_active)
-                    <span class="uo-badge uo-badge-active">Attivo</span>
-                @else
-                    <span class="uo-badge uo-badge-cancelled">Inattivo</span>
-                @endif
-            </td>
+    {{-- ACTIONS --}}
+    <td class="uo-actions">
+        <a href="{{ route('admin.staff.edit', $member) }}"
+           class="uo-action-icon edit">
+            @include('icons.edit')
+        </a>
 
-            <td class="uo-actions">
-                <a href="{{ route('admin.staff.edit', $member) }}" class="uo-action-icon edit">
-                    @include('icons.edit')
-                </a>
+        <form
+            method="POST"
+            action="{{ route('admin.staff.destroy', $member) }}"
+            data-delete
+            data-delete-row="tr"
+            class="d-inline"
+        >
+            @csrf
+            @method('DELETE')
 
-                <form action="{{ route('admin.staff.destroy', $member) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('DELETE')
-                    <button type="button" class="uo-action-icon delete bar-delete">
-                        @include('icons.delete')
-                        <span class="delete-bar"></span>
-                    </button>
-                </form>
-            </td>
+            <button
+                type="button"
+                class="uo-action-icon delete bar-delete"
+                data-delete-button
+            >
+                @include('icons.delete')
+                <span class="delete-bar"></span>
+            </button>
+        </form>
+    </td>
+</tr>
+@empty
+<tr>
+    <td colspan="6" class="text-center text-secondary py-4">
+        Nessuno staff aggiunto.
+    </td>
+</tr>
+@endforelse
 
-        </tr>
-    @empty
-        <tr>
-            <td colspan="6" class="text-center text-secondary py-4">
-                Nessuno staff aggiunto.
-            </td>
-        </tr>
-    @endforelse
 </x-uo-table>
 
 

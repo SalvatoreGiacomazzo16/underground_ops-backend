@@ -1,0 +1,187 @@
+/* ============================
+   EVENTS — TIMELINE LAYOUT
+============================ */
+
+.uo-events-timeline {
+    position: relative;
+    padding-left: 34px;
+    /* spazio per linea + dot */
+}
+
+.uo-events-timeline::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 14px;
+    width: 2px;
+    background: linear-gradient(180deg,
+            rgba(201, 22, 154, .08),
+            rgba(201, 22, 154, .28),
+            rgba(201, 22, 154, .08));
+    box-shadow: 0 0 22px rgba(201, 22, 154, .18);
+    border-radius: 99px;
+}
+
+/* ============================
+   DAY HEADER
+============================ */
+
+.uo-event-day-header {
+    position: relative;
+    padding-left: 14px;
+}
+
+.uo-event-day-label {
+    display: inline-block;
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, .92);
+    background: rgba(201, 22, 154, .16);
+    border: 1px solid rgba(201, 22, 154, .35);
+    box-shadow: 0 0 18px rgba(201, 22, 154, .18);
+    margin-bottom: 6px;
+}
+
+.uo-event-day-date {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: .4px;
+    color: rgba(255, 255, 255, .92);
+}
+
+/* ============================
+   EVENT CARD (SLIM + HOVER ACTIONS)
+============================ */
+
+.uo-event-card {
+    position: relative;
+    margin-left: 14px;
+    margin-bottom: 12px;
+    padding: 14px 14px;
+
+    border-radius: 16px;
+    border: 1px solid rgba(201, 22, 154, .22);
+
+    background: linear-gradient(180deg,
+            rgba(30, 5, 45, .55),
+            rgba(10, 0, 20, .82));
+    backdrop-filter: blur(12px) saturate(120%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .03);
+
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+/* DOT collegato alla timeline */
+.uo-event-card::before {
+    content: "";
+    position: absolute;
+    left: -28px;
+    top: 22px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(201, 22, 154, .85);
+    box-shadow: 0 0 18px rgba(201, 22, 154, .35);
+    transition: transform .22s ease, box-shadow .22s ease, opacity .22s ease;
+}
+
+/* aura soft */
+.uo-event-card::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(600px circle at 20% 0%, rgba(201, 22, 154, .18), transparent 45%);
+    opacity: .55;
+}
+
+.uo-event-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(201, 22, 154, .42);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, .68), 0 0 34px rgba(201, 22, 154, .18);
+}
+
+.uo-event-card:hover::before {
+    transform: scale(1.15);
+    box-shadow: 0 0 26px rgba(201, 22, 154, .55);
+}
+
+/* HEADER riga unica */
+.uo-event-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.uo-event-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 850;
+    letter-spacing: .4px;
+    background: linear-gradient(90deg, #fff, rgba(201, 22, 154, .95));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* META riga unica */
+.uo-event-meta {
+    margin-top: 6px;
+    font-size: .82rem;
+    color: rgba(255, 255, 255, .68);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.uo-event-meta>span:not(:last-child)::after {
+    content: "·";
+    margin-left: 8px;
+    opacity: .6;
+}
+
+/* ACTIONS: solo hover */
+.uo-event-card-actions {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.uo-event-card:hover .uo-event-card-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.uo-event-card-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.uo-event-card-actions {
+    display: flex;
+    align-items: center;
+}
+
+.uo-event-card-actions .uo-action-icon {
+    opacity: 0;
+    transform: translateX(4px);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.uo-event-card:hover .uo-event-card-actions .uo-action-icon {
+    opacity: 1;
+    transform: translateX(0);
+}

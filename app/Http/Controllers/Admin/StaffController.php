@@ -113,14 +113,19 @@ class StaffController extends Controller
             ->with('success', 'Profilo staff aggiornato.');
     }
 
-    public function destroy(StaffProfile $staff)
-    {
-        abort_if($staff->user_id !== Auth::id(), 403);
+  public function destroy(StaffProfile $staff, Request $request)
+{
+    abort_if($staff->user_id !== Auth::id(), 403);
 
-        $staff->delete();
+    $staff->delete();
 
-        return redirect()
-            ->route('admin.staff.index')
-            ->with('success', 'Profilo staff rimosso.');
+    if ($request->expectsJson() || $request->ajax()) {
+        return response()->noContent();
     }
+
+    return redirect()
+        ->route('admin.staff.index')
+        ->with('success', 'Profilo staff rimosso.');
+}
+
 }

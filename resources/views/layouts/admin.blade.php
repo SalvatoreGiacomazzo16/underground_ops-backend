@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Underground Ops — Admin</title>
+ <meta name="csrf-token" content="{{ csrf_token() }}">
 
  @vite(['resources/sass/main.scss', 'resources/js/app.js'])
 </head>
+<div id="uo-toasts">
 
 <body class="uo-bg-deep-dark">
 
@@ -36,4 +38,5 @@
     </div>
 
 </body>
+</div>
 </html>

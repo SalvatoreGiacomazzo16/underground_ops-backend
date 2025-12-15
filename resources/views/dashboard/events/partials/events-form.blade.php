@@ -1,8 +1,11 @@
-{{-- resources/views/dashboard/events/partials/events-form.blade.php --}}
-
 @php
     /** @var \App\Models\Event|null $event */
-    $isEdit = isset($event);
+    $event  = $event ?? null;
+    $isEdit = $event !== null;
+
+    $now = now()->startOfMinute();
+    $startDefault = $now->format('Y-m-d\TH:i');
+    $endDefault   = $now->copy()->addHours(3)->format('Y-m-d\TH:i');
 @endphp
 
 <div class="row g-4">
@@ -14,7 +17,7 @@
             id="title"
             name="title"
             type="text"
-            value="{{ old('title', $event->title ?? '') }}"
+            value="{{ old('title', $event?->title) }}"
             placeholder="Inserisci un titolo…"
             required
         >
@@ -24,9 +27,9 @@
     <div class="col-md-6 input-field">
         <label for="event_type">Tipo Evento</label>
         <select id="event_type" name="event_type" required>
-            @foreach (['live' => 'Live', 'djset' => 'DJ Set', 'party' => 'Party', 'festival' => 'Festival'] as $key => $label)
+            @foreach (['live'=>'Live','djset'=>'DJ Set','party'=>'Party','festival'=>'Festival'] as $key => $label)
                 <option value="{{ $key }}"
-                    {{ old('event_type', $event->event_type ?? '') === $key ? 'selected' : '' }}>
+                    {{ old('event_type', $event?->event_type) === $key ? 'selected' : '' }}>
                     {{ $label }}
                 </option>
             @endforeach
@@ -41,7 +44,7 @@
             name="description"
             rows="3"
             placeholder="Aggiungi una descrizione…"
-        >{{ old('description', $event->description ?? '') }}</textarea>
+        >{{ old('description', $event?->description) }}</textarea>
     </div>
 
     {{-- DATA INIZIO --}}
@@ -51,7 +54,7 @@
             id="start_datetime"
             name="start_datetime"
             type="datetime-local"
-            value="{{ old('start_datetime', isset($event) ? $event->start_datetime->format('Y-m-d\TH:i') : '') }}"
+            value="{{ old('start_datetime', $event?->start_datetime?->format('Y-m-d\TH:i') ?? $startDefault) }}"
             required
         >
     </div>
@@ -63,20 +66,31 @@
             id="end_datetime"
             name="end_datetime"
             type="datetime-local"
-            value="{{ old('end_datetime', isset($event->end_datetime) ? $event->end_datetime->format('Y-m-d\TH:i') : '') }}"
+            value="{{ old('end_datetime', $event?->end_datetime?->format('Y-m-d\TH:i') ?? $endDefault) }}"
         >
     </div>
 
     {{-- LOCATION --}}
     <div class="col-md-6 input-field">
         <label for="location_id">Location</label>
-        <select id="location_id" name="location_id">
-            @foreach ($locations as $loc)
-                <option value="{{ $loc->id }}"
-                    {{ old('location_id', $event->location_id ?? '') == $loc->id ? 'selected' : '' }}>
-                    {{ $loc->name }}
+        <select
+            id="location_id"
+            name="location_id"
+            {{ $locations->isEmpty() ? 'disabled' : 'required' }}
+        >
+            @if($locations->isEmpty())
+                <option selected>⚠️ Crea prima una location</option>
+            @else
+                <option value="" disabled {{ old('location_id', $event?->location_id) ? '' : 'selected' }}>
+                    Seleziona una location
                 </option>
-            @endforeach
+                @foreach ($locations as $loc)
+                    <option value="{{ $loc->id }}"
+                        {{ old('location_id', $event?->location_id) == $loc->id ? 'selected' : '' }}>
+                        {{ $loc->name }}
+                    </option>
+                @endforeach
+            @endif
         </select>
     </div>
 
@@ -86,7 +100,7 @@
         <select id="status" name="status">
             @foreach (['draft'=>'Bozza','published'=>'Pubblicato','cancelled'=>'Cancellato','archived'=>'Archiviato'] as $key => $label)
                 <option value="{{ $key }}"
-                    {{ old('status', $event->status ?? '') === $key ? 'selected' : '' }}>
+                    {{ old('status', $event?->status ?? 'draft') === $key ? 'selected' : '' }}>
                     {{ $label }}
                 </option>
             @endforeach
@@ -97,50 +111,9 @@
     <div class="col-md-6 input-field">
         <label for="visibility">Visibilità</label>
         <select id="visibility" name="visibility">
-            <option value="public" {{ old('visibility', $event->visibility ?? '') === 'public' ? 'selected' : '' }}>
-                Pubblico
-            </option>
-            <option value="private" {{ old('visibility', $event->visibility ?? '') === 'private' ? 'selected' : '' }}>
-                Privato
-            </option>
+            <option value="public"  {{ old('visibility', $event?->visibility ?? 'public') === 'public' ? 'selected' : '' }}>Pubblico</option>
+            <option value="private" {{ old('visibility', $event?->visibility) === 'private' ? 'selected' : '' }}>Privato</option>
         </select>
-    </div>
-
-    {{-- CAPACITÀ --}}
-    <div class="col-md-6 input-field">
-        <label for="max_capacity">Capienza Massima</label>
-        <input
-            id="max_capacity"
-            name="max_capacity"
-            type="number"
-            placeholder="Es. 300"
-            value="{{ old('max_capacity', $event->max_capacity ?? '') }}"
-        >
-    </div>
-
-    {{-- ETÀ MINIMA --}}
-    <div class="col-md-6 input-field">
-        <label for="min_age">Età Minima</label>
-        <input
-            id="min_age"
-            name="min_age"
-            type="number"
-            placeholder="Es. 18"
-            value="{{ old('min_age', $event->min_age ?? '') }}"
-        >
-    </div>
-
-    {{-- PREZZO --}}
-    <div class="col-md-6 input-field">
-        <label for="base_ticket_price">Prezzo Base (€)</label>
-        <input
-            id="base_ticket_price"
-            name="base_ticket_price"
-            type="number"
-            step="0.01"
-            placeholder="Es. 15.00"
-            value="{{ old('base_ticket_price', $event->base_ticket_price ?? '') }}"
-        >
     </div>
 
 </div>

@@ -65,8 +65,21 @@ Route::middleware(['auth'])
         | STAFF ASSEGNATO AGLI EVENTI
         |--------------------------------------------------------------------------
         */
-        Route::get('events/{event}/staff',  [EventStaffController::class, 'edit'])->name('events.staff.edit');
-        Route::post('events/{event}/staff', [EventStaffController::class, 'update'])->name('events.staff.update');
+
+Route::prefix('events')->name('events.')->group(function () {
+
+    Route::get('/',        [AdminEventController::class, 'index'])->name('index');
+    Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
+
+    Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
+    Route::post('/',       [AdminEventController::class, 'store'])->name('store');
+
+    Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
+    Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
+
+    Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
+});
+
 
         /*
         |--------------------------------------------------------------------------

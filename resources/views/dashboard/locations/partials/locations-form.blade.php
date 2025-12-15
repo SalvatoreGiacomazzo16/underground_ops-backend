@@ -43,12 +43,14 @@
     {{-- PROVINCIA --}}
     <div class="col-md-6 input-field">
         <label for="province">Provincia</label>
-        <input
-            id="province"
-            name="province"
-            type="text"
-            value="{{ old('province', $location->province ?? '') }}"
-        >
+       <input
+    id="province"
+    name="province"
+    type="text"
+    maxlength="2"
+    placeholder="ES: RM"
+    value="{{ old('province', $location->province ?? '') }}"
+>
     </div>
 
     {{-- CAPIENZA --}}

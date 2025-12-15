@@ -46,8 +46,8 @@ class LocationController extends Controller
             'address'       => 'nullable|string',
             'city'          => 'nullable|string|max:255',
             'province'      => 'nullable|string|max:255',
-            'capacity_min'  => 'nullable|integer|min:0',
-            'capacity_max'  => 'nullable|integer|gte:capacity_min',
+            'capacity_min' => ['nullable', 'integer', 'min:0'],
+            'capacity_max' => ['nullable', 'integer', 'min:0', 'gte:capacity_min'],
             'notes'         => 'nullable|string',
         ]);
 
@@ -110,16 +110,20 @@ class LocationController extends Controller
     | DELETE
     |--------------------------------------------------------------------------
     */
-    public function destroy(Location $location)
-    {
-        if ($location->user_id !== Auth::id()) {
-            abort(403);
-        }
+  public function destroy(Location $location, Request $request)
+{
+    abort_if($location->user_id !== Auth::id(), 403);
 
-        $location->delete();
+    $location->delete();
 
-        return redirect()
-            ->route('admin.locations.index')
-            ->with('success', 'Location eliminata.');
+    // 🔥 CHIAMATA AJAX / FETCH
+    if ($request->expectsJson() || $request->ajax()) {
+        return response()->noContent(); // 204
     }
+
+    // 🔁 SUBMIT CLASSICO
+    return redirect()
+        ->route('admin.locations.index')
+        ->with('success', 'Location eliminata.');
+}
 }
