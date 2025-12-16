@@ -28,25 +28,42 @@ Route::middleware(['auth'])
     ->name('admin.')
     ->group(function () {
 
-        // DASHBOARD
+        /*
+        |--------------------------------------------------------------------------
+        | DASHBOARD
+        |--------------------------------------------------------------------------
+        */
         Route::get('/', [ManagerDashboardController::class, 'index'])
             ->name('dashboard');
 
         /*
         |--------------------------------------------------------------------------
-        | EVENT CRUD
+        | EVENTS CRUD + STAFF EVENTO
         |--------------------------------------------------------------------------
         */
         Route::prefix('events')->name('events.')->group(function () {
 
+            // LISTE
             Route::get('/',        [AdminEventController::class, 'index'])->name('index');
+            Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
+
+            // CREATE
             Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
             Route::post('/',       [AdminEventController::class, 'store'])->name('store');
 
+            // EDIT / UPDATE
             Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
             Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
 
+            // DELETE
             Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
+
+            // 👥 STAFF ASSOCIATO ALL’EVENTO
+            Route::get('/{event}/staff', [EventStaffController::class, 'edit'])
+                ->name('staff.edit');
+
+            Route::put('/{event}/staff', [EventStaffController::class, 'update'])
+                ->name('staff.update');
         });
 
         /*
@@ -54,39 +71,22 @@ Route::middleware(['auth'])
         | STAFF CRUD
         |--------------------------------------------------------------------------
         |
-        | Usa le views:
-        | - resources/views/dashboard/staff/
+        | Views: resources/views/dashboard/staff/
         |
         */
-        Route::resource('staff', StaffController::class)->except(['show']);
+        Route::resource('staff', StaffController::class)
+            ->except(['show']);
 
         /*
         |--------------------------------------------------------------------------
-        | STAFF ASSEGNATO AGLI EVENTI
+        | LOCATION CRUD
         |--------------------------------------------------------------------------
+        |
+        | Views: resources/views/dashboard/locations/
+        |
         */
-
-Route::prefix('events')->name('events.')->group(function () {
-
-    Route::get('/',        [AdminEventController::class, 'index'])->name('index');
-    Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
-
-    Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
-    Route::post('/',       [AdminEventController::class, 'store'])->name('store');
-
-    Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
-    Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
-
-    Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
-});
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | LOCATION CRUD (correttamente a livello admin, NON dentro events)
-        |--------------------------------------------------------------------------
-        */
-        Route::resource('locations', LocationController::class)->except(['show']);
+        Route::resource('locations', LocationController::class)
+            ->except(['show']);
     });
 
 /*
@@ -94,11 +94,12 @@ Route::prefix('events')->name('events.')->group(function () {
 | HOMEPAGE PUBBLICA
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn() => view('pages.welcome'))->name('welcome');
+Route::get('/', fn () => view('pages.welcome'))
+    ->name('welcome');
 
 /*
 |--------------------------------------------------------------------------
-| TEST DB
+| TEST DB (DEV ONLY)
 |--------------------------------------------------------------------------
 */
 Route::get('/db-test', function () {
@@ -115,4 +116,4 @@ Route::get('/db-test', function () {
 | 404 FALLBACK
 |--------------------------------------------------------------------------
 */
-Route::fallback(fn() => response()->view('pages.not-found', [], 404));
+Route::fallback(fn () => response()->view('pages.not-found', [], 404));

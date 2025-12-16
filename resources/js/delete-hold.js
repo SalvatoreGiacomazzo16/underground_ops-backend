@@ -81,6 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     statusText: res.statusText,
                     body,
                 });
+
+                // 🔔 TOAST ERROR (temporaneo)
+                if (window.uoToast) {
+                    uoToast("Errore durante l'eliminazione", "error");
+                }
+
                 throw new Error(`Delete failed (${res.status})`);
             }
 
@@ -94,10 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
                        EVENT DAY CLEANUP
                     ============================ */
 
-                    // ⬅️ PRENDI IL WRAPPER PRIMA
                     const dayWrapper = row.closest(".uo-event-day");
 
                     row.remove();
+                    toast('success', 'Elemento eliminato');
+
 
                     if (dayWrapper) {
                         const remainingEventsInDay =
@@ -116,24 +123,27 @@ document.addEventListener("DOMContentLoaded", () => {
                         document.querySelectorAll(".uo-event-day").length;
 
                     if (remainingDays === 0) {
-                        const timeline = document.querySelector(".uo-events-timeline");
+                        const timeline =
+                            document.querySelector(".uo-events-timeline");
 
                         if (timeline) {
                             timeline.innerHTML = `
-                <div class="uo-empty-state text-center text-secondary py-5">
-                    Nessun evento programmato.
-                </div>
-            `;
+                                <div class="uo-empty-state text-center text-secondary py-5">
+                                    Nessun evento programmato.
+                                </div>
+                            `;
                         }
                     }
 
+                    // 🔔 TOAST SUCCESS (opzionale)
+                    if (window.uoToast) {
+                        uoToast("Evento eliminato", "success");
+                    }
+
                 }, 300);
-
-
             }
         } catch (err) {
             console.error(err);
-            alert("Errore durante l'eliminazione.");
         } finally {
             onStop();
         }

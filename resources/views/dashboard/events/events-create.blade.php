@@ -56,7 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (startDate.getTime() < now.getTime() - TOLERANCE_MS) {
             e.preventDefault();
-            alert('La data di inizio non può essere nel passato.');
+            window.toast('error', 'La data di inizio non può essere nel passato.');
+
             return;
         }
 
@@ -70,10 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (endDate.getTime() <= startDate.getTime()) {
                 e.preventDefault();
-                alert('La data di fine deve essere successiva a quella di inizio.');
+               window.toast('error', 'La data di fine deve essere successiva a quella di inizio.');
+
                 return;
             }
         }
     });
 });
 </script>
+

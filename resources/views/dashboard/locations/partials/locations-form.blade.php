@@ -21,12 +21,13 @@
     {{-- INDIRIZZO --}}
     <div class="col-md-6 input-field">
         <label for="address">Indirizzo</label>
-        <input
-            id="address"
-            name="address"
-            type="text"
-            value="{{ old('address', $location->address ?? '') }}"
-        >
+       <input
+    id="address"
+    name="address"
+    type="text"
+    required
+    placeholder="Via Roma 45"
+/>
     </div>
 
     {{-- CITTÀ --}}
@@ -48,7 +49,7 @@
     name="province"
     type="text"
     maxlength="2"
-    placeholder="ES: RM"
+    placeholder="ES: NA"
     value="{{ old('province', $location->province ?? '') }}"
 >
     </div>

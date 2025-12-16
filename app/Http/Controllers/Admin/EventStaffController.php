@@ -9,38 +9,62 @@ use Illuminate\Http\Request;
 
 class EventStaffController extends Controller
 {
+    /* ============================
+        EDIT — FORM STAFF EVENTO
+    ============================ */
     public function edit(Event $event)
     {
-        $staffProfiles = StaffProfile::orderBy('stage_name')->get();
+        // 🔐 sicurezza: solo eventi dell’utente
+        abort_if($event->created_by !== auth()->id(), 403);
+
+        $staffProfiles = StaffProfile::where('user_id', auth()->id())
+            ->orderBy('stage_name')
+            ->get();
 
         // staff già assegnato
         $assigned = $event->staff()->get();
 
-        return view('admin.events.staff', compact('event', 'staffProfiles', 'assigned'));
+        return view(
+            'dashboard.events.events-staff',
+            compact('event', 'staffProfiles', 'assigned')
+        );
     }
 
+    /* ============================
+        UPDATE — SYNC STAFF EVENTO
+    ============================ */
     public function update(Request $request, Event $event)
     {
-        $validated = $request->validate([
-            'staff'                 => 'array',
-            'staff.*.id'            => 'required|exists:staff_profiles,id',
-            'staff.*.role_in_event' => 'nullable|string|max:255',
-            'staff.*.fee'           => 'nullable|numeric|min:0',
-            'staff.*.notes'         => 'nullable|string',
-        ]);
+        // 🔐 sicurezza: solo eventi dell’utente
+        abort_if($event->created_by !== auth()->id(), 403);
 
-        // Costruiamo l'array per sync()
         $syncData = [];
 
         if ($request->has('staff')) {
-            foreach ($request->staff as $row) {
-                $staffId = $row['id'];
+            foreach ($request->staff as $staffId => $row) {
+
+                // ❌ se non attivo → skip
+                if (empty($row['enabled'])) {
+                    continue;
+                }
+
+                $staff = StaffProfile::where('user_id', auth()->id())
+                    ->find($staffId);
+
+                if (!$staff) {
+                    continue;
+                }
+
+                // 🧠 ruolo evento:
+                // override se presente, altrimenti ruolo base
+                $roleInEvent = trim($row['role_in_event'] ?? '') !== ''
+                    ? $row['role_in_event']
+                    : $staff->role;
 
                 $syncData[$staffId] = [
-                    'role_in_event' => $row['role_in_event'] ?? null,
+                    'role_in_event' => $roleInEvent,
                     'fee'           => $row['fee'] ?? null,
                     'notes'         => $row['notes'] ?? null,
-                    // checkin/checkout li gestirai più avanti
                 ];
             }
         }

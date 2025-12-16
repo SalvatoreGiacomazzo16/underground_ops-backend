@@ -9,9 +9,9 @@
 
  @vite(['resources/sass/main.scss', 'resources/js/app.js'])
 </head>
-<div id="uo-toasts">
 
 <body class="uo-bg-deep-dark">
+    <div id="uo-toasts"></div>
 
     {{-- UNIVERSAL MOBILE DRAWER --}}
     @include('layouts.drawer-mobile')
@@ -36,7 +36,32 @@
 
         </div>
     </div>
+@if (session('success'))
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        toast('success', @json(session('success')));
+    });
+</script>
+@endif
+
+@if (session('error'))
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        toast('error', @json(session('error')));
+    });
+</script>
+@endif
+
+@if ($errors->any())
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        @foreach ($errors->all() as $error)
+            toast('error', @json($error), { duration: 6000 });
+        @endforeach
+    });
+</script>
+@endif
 
 </body>
-</div>
+
 </html>
