@@ -1,5 +1,5 @@
 @extends(auth()->check() ? 'layouts.admin' : 'layouts.guest')
-
+@php($hideTimelineOps = true)
 @section('content')
 
 <div class="container py-5 d-flex flex-column align-items-center justify-content-center text-center">

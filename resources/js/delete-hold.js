@@ -105,6 +105,32 @@ document.addEventListener("DOMContentLoaded", () => {
                     row.remove();
                     toast('success', 'Elemento eliminato');
 
+                    /* ============================
+                       LOCATION EMPTY STATE
+                    ============================ */
+
+                    const remainingLocations =
+                        document.querySelectorAll('[data-location-col]').length;
+
+                    const createLocationCard =
+                        document.querySelector('[data-location-create]');
+
+                    // card "Nuova Location"
+                    if (remainingLocations === 0 && createLocationCard) {
+                        createLocationCard.classList.remove('d-none');
+                    }
+
+                    // bottone top "+ Nuova Location"
+                    const topActionCol =
+                        document.querySelector('.uo-dashboard-btn')?.closest('.col-12');
+
+                    if (topActionCol) {
+                        if (remainingLocations === 0) {
+                            topActionCol.classList.add('d-none');
+                        } else {
+                            topActionCol.classList.remove('d-none');
+                        }
+                    }
 
                     if (dayWrapper) {
                         const remainingEventsInDay =

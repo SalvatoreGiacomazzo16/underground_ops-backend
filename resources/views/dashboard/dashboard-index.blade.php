@@ -90,37 +90,92 @@
     </div>
 </div>
 
-    {{-- Quick Actions --}}
-  <div class="uo-quick-actions mb-5">
+ {{-- OPERATIONS --}}
+<div class="uo-section mb-5">
 
-    {{-- CREA EVENTO --}}
-    <a href="{{ route('admin.events.create') }}" class="uo-dashboard-btn">
-        + Nuovo Evento
-    </a>
+    <h2 class="uo-section-title">Operations</h2>
+    <p class="uo-section-subtitle text-secondary">
+        Azioni operative rapide
+    </p>
 
-    {{-- LOCATION --}}
-   <a href="{{ route('admin.locations.index') }}" class="uo-dashboard-btn">
-    Gestione Location
-</a>
+    <div class="row g-4 mt-3">
 
+        {{-- EVENTI --}}
+        <div class="col-12 col-md-4">
+            <div class="uo-operation-card">
 
-   {{-- STAFF --}}
-<a href="{{ route('admin.staff.create') }}" class="uo-dashboard-btn">
-   + Staff
-</a>
+                <div class="uo-operation-icon">
+                    🎫
+                </div>
 
-</div>
+                <div class="uo-operation-content">
+                    <h4 class="uo-operation-title">Eventi</h4>
+                    <p class="uo-operation-desc">
+                        Crea e gestisci i tuoi eventi
+                    </p>
+                </div>
 
+                <div class="uo-operation-actions">
+                    <a href="{{ route('admin.events.create') }}" class="uo-btn uo-btn-primary">
+                        + Nuovo Evento
+                    </a>
 
-    {{-- Analytics Placeholder --}}
-    <div class="uo-section mb-5">
-        <h2 class="uo-section-title">Analytics</h2>
+                </div>
 
-        <div class="uo-analytics-card">
-            <canvas id="eventsChart"></canvas>
+            </div>
         </div>
+
+        {{-- LOCATION --}}
+        <div class="col-12 col-md-4">
+            <div class="uo-operation-card">
+
+                <div class="uo-operation-icon">
+                    📍
+                </div>
+
+                <div class="uo-operation-content">
+                    <h4 class="uo-operation-title">Location</h4>
+                    <p class="uo-operation-desc">
+                        Gestisci venue e spazi
+                    </p>
+                </div>
+
+                <div class="uo-operation-actions">
+                    <a href="{{ route('admin.locations.index') }}" class="uo-btn uo-btn-primary">
+                        Gestione Location
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        {{-- STAFF --}}
+        <div class="col-12 col-md-4">
+            <div class="uo-operation-card">
+
+                <div class="uo-operation-icon">
+                    👥
+                </div>
+
+                <div class="uo-operation-content">
+                    <h4 class="uo-operation-title">Staff</h4>
+                    <p class="uo-operation-desc">
+                        Team, ruoli e assegnazioni
+                    </p>
+                </div>
+
+                <div class="uo-operation-actions">
+                    <a href="{{ route('admin.staff.create') }}" class="uo-btn uo-btn-primary">
+                        + Aggiungi Staff
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
 </div>
+
 
 @endsection

@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-
+@php($hideTimelineOps = true)
 @section('content')
 <div class="container-fluid">
 

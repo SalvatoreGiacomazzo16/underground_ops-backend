@@ -111,6 +111,20 @@ Route::get('/db-test', function () {
     }
 });
 
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware('auth')
+    ->group(function () {
+
+        Route::get('/timeline', function () {
+            return view('dashboard.timeline.timeline-ops-index');
+        })->name('timeline.index');
+
+    });
+
+
+
+
 /*
 |--------------------------------------------------------------------------
 | 404 FALLBACK
