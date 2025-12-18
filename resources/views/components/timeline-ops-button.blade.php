@@ -1,4 +1,4 @@
-<a href="#"
+<a href="{{ route('admin.timeline.index') }}"
    class="uo-timeline-btn"
    aria-label="Apri Timeline Ops">
 

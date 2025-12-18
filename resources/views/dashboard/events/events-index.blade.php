@@ -1,6 +1,11 @@
 @extends('layouts.admin')
 
 @section('content')
+  {{-- HERO --}}
+    <div class="mb-4">
+        <h1 class="uo-section-title mb-1">Gestione Eventi</h1>
+        <p class="text-secondary">EVENTS MANAGEMENT — UNDERGROUND OPS</p>
+    </div>
 <div class="uo-dashboard container-fluid">
 
     {{-- ACTION BAR --}}

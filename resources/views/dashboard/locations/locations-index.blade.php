@@ -2,7 +2,11 @@
 
 @section('content')
 <div class="uo-dashboard container-fluid">
-
+  {{-- HERO --}}
+    <div class="mb-4">
+        <h1 class="uo-section-title mb-1">Gestione Location</h1>
+        <p class="text-secondary">LOCATION MANAGEMENT — UNDERGROUND OPS</p>
+    </div>
     <div class="row g-4">
 
         {{-- CREATE CARD GLASS (EMPTY STATE) --}}
