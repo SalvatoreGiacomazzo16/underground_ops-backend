@@ -1,0 +1,194 @@
+// =========================================
+// TIMELINE OPS — CORE LAYOUT
+// =========================================
+
+.uo-timeline {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+}
+
+.uo-timeline-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+
+    background: rgba(10, 10, 20, 0.85);
+    backdrop-filter: blur(10px);
+
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uo-timeline-title {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #ffffff;
+}
+
+.uo-timeline-meta {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+// Contenitore scrollabile principale
+.uo-timeline-body {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    flex: 1;
+    overflow-y: auto;
+
+    // Smooth scrolling per UX fluida
+    scroll-behavior: smooth;
+
+    // Posizionamento relativo per calcoli offset
+    position: relative;
+}
+
+.uo-timeline-axis {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uo-timeline-canvas {
+    position: relative;
+    background: rgba(0, 0, 0, 0.25);
+    // Permette lo scroll verticale della pagina (pan-y),
+    // ma le azioni dirette sui blocchi sono gestite via JS
+    touch-action: pan-y;
+}
+
+// =========================================
+// BLOCCO INTERATTIVO (Refactored)
+// =========================================
+.uo-timeline-block {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+
+    // Layout interno Flexbox per centrare il contenuto
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+
+    border-radius: 6px;
+    padding: 2px 10px;
+
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    // 🟢 CRITICO: Abilita interazione mouse/touch
+    pointer-events: auto;
+
+    // 🔒 CRITICO: Impedisce lo scroll del browser mentre trascini il blocco
+    touch-action: none;
+
+    cursor: grab;
+    transition: box-shadow 0.15s ease, transform 0.1s ease, border-color 0.1s ease, z-index 0s;
+
+    &:hover {
+        z-index: 10;
+    }
+
+    // Stato Attivo (Selezionato o in Dragging)
+    &.is-active {
+        z-index: 50;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+        border-color: #fff;
+        cursor: grabbing;
+    }
+
+    // Struttura interna (Label + Meta)
+    .uo-block-content {
+        pointer-events: none; // Il click passa attraverso il testo
+        line-height: 1.1;
+    }
+
+    .uo-block-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .uo-block-meta {
+        display: block;
+        font-size: 0.65rem;
+        opacity: 0.8;
+        margin-top: 2px;
+        white-space: nowrap;
+    }
+}
+
+// =========================================
+// MANIGLIA DI RIDIMENSIONAMENTO
+// =========================================
+.uo-resizer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    height: 12px; // Area di tocco generosa
+    cursor: ns-resize; // Cursore freccia su/giù
+    z-index: 2;
+
+    // Indicatore visivo (piccola linea al centro)
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 2px;
+        opacity: 0; // Invisibile finché non vai in hover
+        transition: opacity 0.2s;
+    }
+
+    // Mostra la maniglia in hover o se il blocco è attivo
+    &:hover::after,
+    .uo-timeline-block.is-active &::after {
+        opacity: 1;
+    }
+}
+
+// =========================================
+// AXIS & GHOST
+// =========================================
+.uo-time-slot {
+    height: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    padding-left: 10px; // Padding per allineare il testo
+    display: flex;
+    align-items: flex-end; // Allinea l'ora alla linea
+}
+
+.uo-time-slot.is-hour {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.uo-timeline-ghost {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+            rgba(201, 22, 154, 0),
+            rgba(201, 22, 154, 0.8),
+            rgba(201, 22, 154, 0));
+    box-shadow: 0 0 12px rgba(201, 22, 154, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}

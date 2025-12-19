@@ -29,6 +29,7 @@
 @import "components/titles";
 @import "components/tables";
 @import "components/toast";
+@import "components/actions";
 
 /* ============================================================
 6) PAGE LAYOUT (struttura, wrapper, spacing)
@@ -44,13 +45,14 @@
 
 @import "pages/pagination";
 
-@import "components/actions";
 
 @import "pages/locations";
 
 @import"pages/events";
 
-// @import "pages/admin";  // <-- commento corretto
+@import"pages/timeline";
+
+// @import "pages/admin";
 
 /* ============================================================
    8) VFX — effetti visivi
