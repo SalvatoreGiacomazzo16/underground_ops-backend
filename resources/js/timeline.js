@@ -58,12 +58,16 @@ export function generateTimeSlots({
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Utilities ---
+    // ----------------
+    // Utilities
+    // ----------------
     function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
     }
 
-    // --- References ---
+    // ----------------
+    // References
+    // ----------------
     const canvas = document.querySelector('.uo-timeline-canvas');
     const ghost = document.querySelector('.uo-timeline-ghost');
     const scroller = document.querySelector('.uo-timeline-body');
@@ -73,43 +77,55 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // --- Config ---
+    // ----------------
+    // Config
+    // ----------------
     const DEFAULT_DURATION = 60;
 
-    // --- State: Data ---
+    // ----------------
+    // State — Data
+    // ----------------
     let blocks = [
         { id: 'b1', tStart: 777, duration: 118, label: 'DJ SET', color: '#c9169a' },
         { id: 'b2', tStart: 842, duration: 97, label: 'LIVE', color: '#8f2cf4' },
         { id: 'b3', tStart: 915, duration: 183, label: 'AFTER', color: '#ff7ad9' }
     ];
 
-    // --- State: Runtime Interaction ---
+    // ----------------
+    // State — Runtime
+    // ----------------
     let activeBlockId = null;
     let isDragging = false;
     let isResizing = false;
 
-    // Tracking per Ghost + Scroll Sync
-    let lastClientY = null;
-    let currentGhostY = null; // FIX: Source of truth per il posizionamento
+    let isContextMenuOpen = false;
 
-    // Variabili temporanee per Drag/Resize
+    let lastClientY = null;
+    let currentGhostY = null;
+
     let dragStartY = 0;
     let initialBlockTop = 0;
     let initialBlockHeight = 0;
     let activeElement = null;
 
-    // ================================
-    // Helper: ID Generator
-    // ================================
+    // ----------------
+    // Context Menu Handling
+    // ----------------
+    canvas.addEventListener('contextmenu', () => {
+        isContextMenuOpen = true;
+    });
+
+    // ----------------
+    // Helpers
+    // ----------------
     function generateId() {
         return `blk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     }
 
-    // ================================
-    // Rendering System
-    // ================================
+    // ----------------
+    // Rendering
+    // ----------------
     function renderBlocks() {
-        // Rimuovi blocchi esistenti
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
 
         blocks.forEach(block => {
@@ -117,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const snappedDuration = snapToUnit(block.duration);
 
             const relativeStart = snappedStart - RANGE_START_MINUTES;
-            if (relativeStart < 0) return; // Fuori range
+            if (relativeStart < 0) return;
 
             const top = minutesToPixels(relativeStart);
             const height = minutesToPixels(snappedDuration);
@@ -134,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.height = `${height}px`;
             el.style.backgroundColor = block.color;
 
-            // Markup interno strutturato
             el.innerHTML = `
                 <div class="uo-block-content">
                     <span class="uo-block-label">${block.label}</span>
@@ -147,70 +162,105 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // First paint
     renderBlocks();
 
-    // ================================
-    // Core Logic: GHOST POSITIONING
-    // ================================
+    // ----------------
+    // Ghost Logic (Source of Truth)
+    // ----------------
     function updateGhostPosition(clientY) {
         if (!ghost) return;
 
-        // Se stiamo draggando/resizzando o il mouse è fuori, nascondi ghost
         if (isDragging || isResizing || clientY === null) {
             ghost.style.opacity = '0';
-            currentGhostY = null; // Reset per sicurezza
+            currentGhostY = null;
             return;
         }
 
         const rect = canvas.getBoundingClientRect();
+        const scrollTop = scroller ? scroller.scrollTop : 0;
 
-        // Calcolo Y relativo al canvas (senza scrollTop perché rect.top cambia con lo scroll)
-        const rawY = (clientY - rect.top);
-
+        const rawY = (clientY - rect.top) + scrollTop;
         const maxY = canvas.scrollHeight;
+
         const clampedY = clamp(rawY, 0, maxY);
         const snappedY = Math.round(clampedY / SLOT_HEIGHT) * SLOT_HEIGHT;
 
-        // FIX: Salva l'ultima posizione valida calcolata (Source of Truth)
         currentGhostY = snappedY;
-
         ghost.style.top = `${snappedY}px`;
         ghost.style.opacity = '1';
     }
 
-    // ================================
-    // Event: SCROLL (Fix per Wheel Tracking)
-    // ================================
+    // ----------------
+    // Scroll sync
+    // ----------------
     if (scroller) {
         scroller.addEventListener('scroll', () => {
-            // Aggiorna la ghost usando l'ultima posizione nota del mouse
             if (lastClientY !== null) {
                 updateGhostPosition(lastClientY);
             }
         }, { passive: true });
     }
 
-    // ================================
-    // Interaction: POINTER DOWN
-    // ================================
+    // ----------------
+    // Collision Handling — Phase 1
+    // ----------------
+    function getCollisionLimits(activeId) {
+        const activeBlock = blocks.find(b => b.id === activeId);
+
+        let minStart = RANGE_START_MINUTES;
+        const timelineMinutes =
+            (canvas.scrollHeight / SLOT_HEIGHT) * UNIT_MINUTES;
+        let maxEnd = RANGE_START_MINUTES + timelineMinutes;
+
+        if (!activeBlock) return { minStart, maxEnd };
+
+        blocks.forEach(other => {
+            if (other.id === activeId) return;
+
+            if (other.tStart + other.duration <= activeBlock.tStart) {
+                minStart = Math.max(minStart, other.tStart + other.duration);
+            }
+
+            if (other.tStart >= activeBlock.tStart + activeBlock.duration) {
+                maxEnd = Math.min(maxEnd, other.tStart);
+            }
+        });
+
+        return { minStart, maxEnd };
+    }
+
+    // ----------------
+    // Pointer Down
+    // ----------------
     canvas.addEventListener('pointerdown', (e) => {
+
+        // Consume first click after context menu
+        if (
+            isContextMenuOpen &&
+            e.pointerType === 'mouse' &&
+            e.button === 0
+        ) {
+            isContextMenuOpen = false;
+            return;
+        }
+
+        // Block right & middle click
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+            return;
+        }
+
         const targetBlock = e.target.closest('.uo-timeline-block');
         const targetResizer = e.target.closest('.uo-resizer');
 
-        // Coordinate Y iniziali per il drag/resize
         const rect = canvas.getBoundingClientRect();
         const scrollTop = scroller ? scroller.scrollTop : 0;
         const rawY = (e.clientY - rect.top) + scrollTop;
 
-        // Nascondi subito la ghost
         if (ghost) ghost.style.opacity = '0';
 
-        // --- CASO 1: RESIZE ---
+        // --- RESIZE ---
         if (targetResizer && targetBlock) {
             e.preventDefault();
-            e.stopPropagation();
-
             isResizing = true;
             activeElement = targetBlock;
             activeBlockId = targetBlock.dataset.blockId;
@@ -225,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- CASO 2: DRAG / SELECT / DELETE ---
+        // --- DRAG / DELETE ---
         if (targetBlock) {
             if (e.altKey) {
                 blocks = blocks.filter(b => b.id !== targetBlock.dataset.blockId);
@@ -248,14 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- CASO 3: CREAZIONE (Click su vuoto) ---
-        // FIX: Usa currentGhostY invece di ricalcolare da e.clientY
-        // Questo allinea perfettamente la creazione alla preview visiva (Ghost)
+        // --- CREATE ---
         if (currentGhostY === null) return;
 
         activeBlockId = null;
 
-        const minutesFromStart = (currentGhostY / SLOT_HEIGHT) * UNIT_MINUTES;
+        const minutesFromStart =
+            (currentGhostY / SLOT_HEIGHT) * UNIT_MINUTES;
 
         const newBlock = {
             id: generateId(),
@@ -270,14 +319,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBlocks();
     });
 
-    // ================================
-    // Interaction: POINTER MOVE (Unified)
-    // ================================
+    // ----------------
+    // Pointer Move
+    // ----------------
     canvas.addEventListener('pointermove', (e) => {
-        // Memorizza sempre l'ultima Y valida per lo scroll handler
         lastClientY = e.clientY;
 
-        // Gestione Ghost (se non siamo impegnati in altro)
         if (!isDragging && !isResizing) {
             updateGhostPosition(lastClientY);
             return;
@@ -288,71 +335,92 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = canvas.getBoundingClientRect();
         const scrollTop = scroller ? scroller.scrollTop : 0;
         const currentRawY = (e.clientY - rect.top) + scrollTop;
-
         const deltaY = currentRawY - dragStartY;
 
-        // --- LOGICA RESIZE ---
+        const limits = getCollisionLimits(activeBlockId);
+
+        // --- RESIZE ---
         if (isResizing) {
             let newHeightRaw = initialBlockHeight + deltaY;
             let snappedHeight = Math.round(newHeightRaw / SLOT_HEIGHT) * SLOT_HEIGHT;
 
-            const maxAvailableHeight = canvas.scrollHeight - initialBlockTop;
-            snappedHeight = clamp(snappedHeight, SLOT_HEIGHT, maxAvailableHeight);
+            const currentStart =
+                RANGE_START_MINUTES +
+                (initialBlockTop / SLOT_HEIGHT) * UNIT_MINUTES;
 
-            activeElement.style.height = `${snappedHeight}px`;
+            const futureDuration =
+                (snappedHeight / SLOT_HEIGHT) * UNIT_MINUTES;
+
+            const maxAllowedDuration = limits.maxEnd - currentStart;
+
+            let clampedDuration = Math.min(futureDuration, maxAllowedDuration);
+            clampedDuration = Math.max(clampedDuration, UNIT_MINUTES);
+
+            activeElement.style.height =
+                `${minutesToPixels(clampedDuration)}px`;
         }
 
-        // --- LOGICA DRAG ---
+        // --- DRAG ---
         if (isDragging) {
             let newTopRaw = initialBlockTop + deltaY;
             let snappedTop = Math.round(newTopRaw / SLOT_HEIGHT) * SLOT_HEIGHT;
 
-            const maxTop = canvas.scrollHeight - parseFloat(activeElement.style.height);
-            snappedTop = clamp(snappedTop, 0, maxTop);
+            const activeBlock = blocks.find(b => b.id === activeBlockId);
+            const duration = activeBlock ? activeBlock.duration : DEFAULT_DURATION;
 
-            activeElement.style.top = `${snappedTop}px`;
+            const futureStart =
+                RANGE_START_MINUTES +
+                (snappedTop / SLOT_HEIGHT) * UNIT_MINUTES;
+
+            const minAllowedStart = limits.minStart;
+            const maxAllowedStart = limits.maxEnd - duration;
+
+            const clampedStart =
+                clamp(futureStart, minAllowedStart, maxAllowedStart);
+
+            activeElement.style.top =
+                `${minutesToPixels(clampedStart - RANGE_START_MINUTES)}px`;
         }
     });
 
-    // ================================
-    // Interaction: POINTER LEAVE
-    // ================================
+    // ----------------
+    // Pointer Leave
+    // ----------------
     canvas.addEventListener('pointerleave', () => {
         lastClientY = null;
-        if (ghost) ghost.style.opacity = '0';
         currentGhostY = null;
+        if (ghost) ghost.style.opacity = '0';
     });
 
-    // ================================
-    // Interaction: POINTER UP (Commit State)
-    // ================================
-    canvas.addEventListener('pointerup', (e) => {
+    // ----------------
+    // Pointer Up
+    // ----------------
+    canvas.addEventListener('pointerup', () => {
         if (!isDragging && !isResizing) return;
 
         if (activeElement) {
-            const currentBlockId = activeElement.dataset.blockId;
-            const blockIndex = blocks.findIndex(b => b.id === currentBlockId);
+            const id = activeElement.dataset.blockId;
+            const index = blocks.findIndex(b => b.id === id);
 
-            if (blockIndex > -1) {
+            if (index > -1) {
                 const finalTop = parseFloat(activeElement.style.top);
                 const finalHeight = parseFloat(activeElement.style.height);
 
-                const relativeMinutes = (finalTop / SLOT_HEIGHT) * UNIT_MINUTES;
-                const durationMinutes = (finalHeight / SLOT_HEIGHT) * UNIT_MINUTES;
+                blocks[index].tStart =
+                    RANGE_START_MINUTES +
+                    (finalTop / SLOT_HEIGHT) * UNIT_MINUTES;
 
-                blocks[blockIndex].tStart = RANGE_START_MINUTES + relativeMinutes;
-                blocks[blockIndex].duration = durationMinutes;
+                blocks[index].duration =
+                    (finalHeight / SLOT_HEIGHT) * UNIT_MINUTES;
             }
         }
 
-        // Reset
         isDragging = false;
         isResizing = false;
         activeElement = null;
 
         renderBlocks();
 
-        // Ripristina ghost tracking immediato
         if (lastClientY !== null) {
             updateGhostPosition(lastClientY);
         }
