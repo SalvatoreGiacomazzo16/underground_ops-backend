@@ -1,6 +1,13 @@
 // ================================
-// Timeline Ops — Core Constants
+// Timeline Ops — Context & Config
 // ================================
+
+// MOCK CONTEXT (Simuliamo ciò che Blade inietterà)
+// In produzione: window.UO_CONTEXT fornito dal backend
+const CTX = window.UO_CONTEXT || {
+    userId: 'guest_user',
+    eventId: 'demo_event_01'
+};
 
 const UNIT_MINUTES = 15;
 const SLOT_HEIGHT = 20;
@@ -11,9 +18,57 @@ const NEON_PALETTE = [
     '#00ffff', // Cyan Neon
     '#9d00ff', // Purple Neon
     '#ff9900', // Orange Neon
-    '#ffff00', // Yellow Neon
+    '#d9b802', // Gold/Dark Yellow
     '#39ff14'  // Green Neon
 ];
+
+// ================================
+// STORAGE LAYER (Repository Pattern)
+// ================================
+// Questo modulo isola la logica di persistenza.
+// OGGI: Usa localStorage.
+// DOMANI: Sostituirai il contenuto di 'save' e 'load' con chiamate API.
+const TimelineRepository = {
+    getKey() {
+        // Namespace protetto + User isolation + Event isolation
+        return `uo_v1:${CTX.userId}:${CTX.eventId}`;
+    },
+
+    load() {
+        try {
+            const raw = localStorage.getItem(this.getKey());
+            if (!raw) return []; // Nessun dato salvato -> array vuoto
+            const data = JSON.parse(raw);
+            // Validazione minima: deve essere un array
+            return Array.isArray(data) ? data : [];
+        } catch (e) {
+            console.error('Timeline storage corrupted, resetting.', e);
+            return []; // Fallback sicuro
+        }
+    },
+
+    save(blocks) {
+        try {
+            // Puliamo i dati prima di salvare (rimuoviamo riferimenti DOM se ce ne fossero)
+            // Salviamo solo il DTO (Data Transfer Object) puro
+            const cleanData = blocks.map(b => ({
+                id: b.id,
+                tStart: b.tStart,
+                duration: b.duration,
+                label: b.label,
+                color: b.color
+            }));
+
+            // In futuro: await fetch('/api/timeline/save', { body: ... })
+            localStorage.setItem(this.getKey(), JSON.stringify(cleanData));
+
+            // Opzionale: Visual feedback di salvataggio (console per ora)
+            // console.log('Saved to', this.getKey());
+        } catch (e) {
+            console.error('Save failed (quota exceeded?)', e);
+        }
+    }
+};
 
 // ================================
 // UI Styling (Injected)
@@ -25,7 +80,7 @@ function injectStyles() {
     const css = `
         /* --- Block Internals --- */
         .uo-block-content {
-            pointer-events: none; /* Let events pass to block by default */
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             width: 100%;
@@ -36,7 +91,7 @@ function injectStyles() {
         }
 
         .uo-block-label {
-            pointer-events: auto; /* Re-enable for clicking specifically the label */
+            pointer-events: auto;
             font-weight: 700;
             font-size: 11px;
             text-transform: uppercase;
@@ -49,7 +104,7 @@ function injectStyles() {
             padding: 2px 4px;
             margin: -2px -4px;
             border-radius: 2px;
-            user-select: none; /* Important for clean UX before edit */
+            user-select: none;
         }
 
         .uo-block-label:hover {
@@ -73,7 +128,6 @@ function injectStyles() {
             cursor: text;
         }
 
-        /* Selection color to match neon vibe */
         .uo-block-input::selection {
             background: rgba(255,255,255,0.3);
             color: white;
@@ -236,9 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const SCROLL_THRESHOLD = 50;
 
     // ----------------
-    // State — Data
+    // State — Data (INITIAL LOAD)
     // ----------------
-    let blocks = []; // Empty initially
+    // 1. Carichiamo i dati all'avvio usando il Repository
+    let blocks = TimelineRepository.load();
 
     // ----------------
     // State — Runtime
@@ -246,9 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeBlockId = null;
     let isDragging = false;
     let isResizing = false;
-    let isEditingText = false; // Flag for inline edit
+    let isEditingText = false;
 
-    let contextMenuEl = null; // Reference to open menu
+    let contextMenuEl = null;
 
     let lastClientY = null;
     let currentGhostY = null;
@@ -258,12 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let initialBlockHeight = 0;
     let activeElement = null;
 
-    // Auto-Scroll State
     let autoScrollAF = null;
     let scrollDirection = 0;
 
     // ----------------
-    // Context Menu System (Custom)
+    // Context Menu System
     // ----------------
     function closeContextMenu() {
         if (contextMenuEl) {
@@ -285,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             swatch.className = 'uo-color-swatch';
             swatch.style.backgroundColor = color;
             swatch.onpointerdown = (e) => {
-                e.stopPropagation(); // Stop propagation to canvas
+                e.stopPropagation();
                 updateBlockColor(blockId, color);
                 closeContextMenu();
             };
@@ -301,10 +355,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (block) {
             block.color = color;
             renderBlocks();
+            // 2. PERSISTENZA: Colore cambiato -> Save
+            TimelineRepository.save(blocks);
         }
     }
 
-    // Global click listener to close menu
     document.addEventListener('pointerdown', (e) => {
         if (contextMenuEl && !contextMenuEl.contains(e.target)) {
             closeContextMenu();
@@ -322,7 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rendering
     // ----------------
     function renderBlocks() {
-        // Optimization: Do not re-render global blocks if we are just editing text
         if (isEditingText) return;
 
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
@@ -358,33 +412,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="uo-resizer"></div>
             `;
 
-            // === CRITICAL FIX: Split Drag Prevention and Edit Activation ===
-
             const labelEl = el.querySelector('.uo-block-label');
 
-            // 1. POINTERDOWN: "Stop Drag".
-            // We consume the event so it doesn't bubble to the block's drag listener.
-            // This satisfies: "Il testo NON deve far partire drag"
             labelEl.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
             });
 
-            // 2. CLICK: "Start Edit".
-            // We use click because it implies a full press/release cycle.
-            // It is safe to manipulate DOM here.
             labelEl.addEventListener('click', (e) => {
                 e.stopPropagation();
                 startInlineEdit(block.id, labelEl);
             });
 
-            // Delete button logic
             const deleteEl = el.querySelector('.uo-delete-btn');
             deleteEl.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
                 deleteBlock(block.id);
             });
 
-            // Context Menu
             el.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -396,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Inline Editing Logic (Fix Applied)
+    // Inline Editing Logic
     // ----------------
     function startInlineEdit(blockId, labelEl) {
         const block = blocks.find(b => b.id === blockId);
@@ -409,38 +453,33 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = block.label;
         input.className = 'uo-block-input';
 
-        // Swap elements
         labelEl.replaceWith(input);
 
-        // === CRITICAL FIX: Async Focus ===
-        // Wait for the browser to paint the new input before focusing.
-        // requestAnimationFrame creates the perfect delay.
         requestAnimationFrame(() => {
             input.focus();
             input.select();
         });
 
         const save = () => {
-            // Guard against double calls (blur + enter)
             if (!isEditingText) return;
 
             isEditingText = false;
             if (input.value.trim()) {
                 block.label = input.value.trim();
+                // 3. PERSISTENZA: Testo modificato -> Save
+                TimelineRepository.save(blocks);
             }
             renderBlocks();
         };
 
-        // Events
         input.addEventListener('blur', save);
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 input.blur();
             }
-            e.stopPropagation(); // Stop hotkeys/canvas listeners
+            e.stopPropagation();
         });
 
-        // Stop bubbling so clicking the input doesn't trigger canvas ops
         input.addEventListener('pointerdown', e => e.stopPropagation());
         input.addEventListener('click', e => e.stopPropagation());
     }
@@ -449,6 +488,8 @@ document.addEventListener('DOMContentLoaded', () => {
         blocks = blocks.filter(b => b.id !== blockId);
         activeBlockId = null;
         renderBlocks();
+        // 4. PERSISTENZA: Blocco cancellato -> Save
+        TimelineRepository.save(blocks);
     }
 
     renderBlocks();
@@ -535,7 +576,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         scroller.scrollTop += (scrollDirection * SCROLL_SPEED);
 
-        // Force logic update since mouse is stationary but canvas moved
         if (lastClientY !== null) {
             handlePointerMoveLogic(lastClientY);
         }
@@ -589,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!activeElement) return;
 
-        // Use fixed coordinate helper
         const currentRawY = getCanvasRelativeY(clientY);
         const deltaY = currentRawY - dragStartY;
 
@@ -640,24 +679,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Pointer Down (Global Canvas)
+    // Pointer Down
     // ----------------
     canvas.addEventListener('pointerdown', (e) => {
-        // Close menu if clicking on canvas
         closeContextMenu();
 
-        // 1. Check strict conditions
-        if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left click for canvas ops
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         const targetBlock = e.target.closest('.uo-timeline-block');
         const targetResizer = e.target.closest('.uo-resizer');
 
-        // Capture coordinates immediately
         const rawY = getCanvasRelativeY(e.clientY);
 
         if (ghost) ghost.style.opacity = '0';
 
-        // --- VISUAL UPDATE HELPER ---
         const setActiveVisuals = (blockEl) => {
             canvas.querySelectorAll('.uo-timeline-block.is-active').forEach(el =>
                 el.classList.remove('is-active')
@@ -684,16 +719,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- DRAG / DELETE (ALT) ---
         if (targetBlock) {
-            // Power user Delete
             if (e.altKey) {
                 deleteBlock(targetBlock.dataset.blockId);
                 return;
             }
-
-            // --- DRAG LOGIC ---
-            // Note: Because we used stopPropagation on .uo-block-label (pointerdown),
-            // this block will NOT run if the user clicked the text label.
-            // It will only run if clicking the block background.
 
             e.preventDefault();
             isDragging = true;
@@ -709,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- CREATE (SMART PLACEMENT) ---
+        // --- CREATE ---
         if (currentGhostY === null) return;
 
         activeBlockId = null;
@@ -718,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let tStart = RANGE_START_MINUTES + minutesFromStart;
         let tDuration = snapToUnit(DEFAULT_DURATION);
 
-        // Smart Placement Logic
+        // Smart Placement
         let limitStart = RANGE_START_MINUTES;
         const totalMinutes = (canvas.scrollHeight / SLOT_HEIGHT) * UNIT_MINUTES;
         let limitEnd = RANGE_START_MINUTES + totalMinutes;
@@ -744,12 +773,14 @@ document.addEventListener('DOMContentLoaded', () => {
             tStart: tStart,
             duration: tDuration,
             label: 'NEW SLOT',
-            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)] // Random Neon
+            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)]
         };
 
         blocks.push(newBlock);
         activeBlockId = newBlock.id;
         renderBlocks();
+        // 5. PERSISTENZA: Nuovo blocco creato -> Save
+        TimelineRepository.save(blocks);
     });
 
     // ----------------
@@ -783,6 +814,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!isDragging && !isResizing) return;
 
+        let needsSave = false;
+
         if (activeElement) {
             const id = activeElement.dataset.blockId;
             const index = blocks.findIndex(b => b.id === id);
@@ -791,12 +824,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const finalTop = parseFloat(activeElement.style.top);
                 const finalHeight = parseFloat(activeElement.style.height);
 
-                blocks[index].tStart =
-                    RANGE_START_MINUTES +
-                    (finalTop / SLOT_HEIGHT) * UNIT_MINUTES;
+                // Check se è cambiato qualcosa per evitare save inutili
+                const newStart = RANGE_START_MINUTES + (finalTop / SLOT_HEIGHT) * UNIT_MINUTES;
+                const newDuration = (finalHeight / SLOT_HEIGHT) * UNIT_MINUTES;
 
-                blocks[index].duration =
-                    (finalHeight / SLOT_HEIGHT) * UNIT_MINUTES;
+                if (blocks[index].tStart !== newStart || blocks[index].duration !== newDuration) {
+                    blocks[index].tStart = newStart;
+                    blocks[index].duration = newDuration;
+                    needsSave = true;
+                }
             }
         }
 
@@ -808,6 +844,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (lastClientY !== null) {
             updateGhostPosition(lastClientY);
+        }
+
+        // 6. PERSISTENZA: Fine movimento -> Save (se ci sono state modifiche)
+        if (needsSave) {
+            TimelineRepository.save(blocks);
         }
     });
 });
