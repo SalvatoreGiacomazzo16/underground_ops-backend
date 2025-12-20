@@ -4,7 +4,159 @@
 
 const UNIT_MINUTES = 15;
 const SLOT_HEIGHT = 20;
-const RANGE_START_MINUTES = 12 * 60; // 12:00 = 720
+const RANGE_START_MINUTES = 12 * 60; // 12:00
+
+const NEON_PALETTE = [
+    '#ff00ff', // Magenta Neon
+    '#00ffff', // Cyan Neon
+    '#9d00ff', // Purple Neon
+    '#ff9900', // Orange Neon
+    '#ffff00', // Yellow Neon
+    '#39ff14'  // Green Neon
+];
+
+// ================================
+// UI Styling (Injected)
+// ================================
+function injectStyles() {
+    const styleId = 'uo-timeline-styles';
+    if (document.getElementById(styleId)) return;
+
+    const css = `
+        /* --- Block Internals --- */
+        .uo-block-content {
+            pointer-events: none; /* Let events pass to block by default */
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .uo-block-label {
+            pointer-events: auto; /* Re-enable for clicking specifically the label */
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: text;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            border-radius: 2px;
+            user-select: none; /* Important for clean UX before edit */
+        }
+
+        .uo-block-label:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .uo-block-input {
+            pointer-events: auto;
+            all: unset;
+            display: block;
+            width: 100%;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 2px;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            box-sizing: border-box;
+            cursor: text;
+        }
+
+        /* Selection color to match neon vibe */
+        .uo-block-input::selection {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+
+        .uo-block-meta {
+            font-size: 9px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* --- Delete Action --- */
+        .uo-delete-btn {
+            pointer-events: auto;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            font-size: 14px;
+            line-height: 1;
+            font-weight: bold;
+            color: rgba(255,255,255,0.7);
+            background: rgba(0,0,0,0.3);
+            border-radius: 2px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.1s ease, background 0.1s;
+            z-index: 10;
+        }
+
+        .uo-timeline-block:hover .uo-delete-btn {
+            opacity: 1;
+        }
+
+        .uo-delete-btn:hover {
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+        }
+
+        /* --- Context Menu (Minimal) --- */
+        .uo-context-menu {
+            position: fixed;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            gap: 6px;
+            z-index: 9999;
+            animation: fadeIn 0.1s ease-out;
+        }
+
+        .uo-color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.1s;
+        }
+
+        .uo-color-swatch:hover {
+            transform: scale(1.2);
+            border-color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+
+    const styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
+}
 
 // ================================
 // Core Math
@@ -19,7 +171,7 @@ function minutesToPixels(minutes) {
 }
 
 // ================================
-// Timeline Ops — Time Slots Generator
+// Time Slots Generator
 // ================================
 
 export function generateTimeSlots({
@@ -28,17 +180,13 @@ export function generateTimeSlots({
     unitMinutes = 15
 } = {}) {
     const slots = [];
-
     const rangeStartMinutes = startHour * 60;
-    const rangeEndMinutes =
-        (endHour <= startHour ? 24 + endHour : endHour) * 60;
-
+    const rangeEndMinutes = (endHour <= startHour ? 24 + endHour : endHour) * 60;
     const totalDuration = rangeEndMinutes - rangeStartMinutes;
     const slotsCount = totalDuration / unitMinutes;
 
     for (let i = 0; i < slotsCount; i++) {
         const absoluteMinutes = rangeStartMinutes + i * unitMinutes;
-
         const isHour = absoluteMinutes % 60 === 0;
         const displayHour = Math.floor(absoluteMinutes / 60) % 24;
 
@@ -48,7 +196,6 @@ export function generateTimeSlots({
             displayHour: isHour ? String(displayHour).padStart(2, '0') : null
         });
     }
-
     return slots;
 }
 
@@ -57,6 +204,8 @@ export function generateTimeSlots({
 // ================================
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    injectStyles();
 
     // ----------------
     // Utilities
@@ -82,14 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------
     const DEFAULT_DURATION = 60;
 
+    // Auto-Scroll Config
+    const SCROLL_SPEED = 12;
+    const SCROLL_THRESHOLD = 50;
+
     // ----------------
     // State — Data
     // ----------------
-    let blocks = [
-        { id: 'b1', tStart: 777, duration: 118, label: 'DJ SET', color: '#c9169a' },
-        { id: 'b2', tStart: 842, duration: 97, label: 'LIVE', color: '#8f2cf4' },
-        { id: 'b3', tStart: 915, duration: 183, label: 'AFTER', color: '#ff7ad9' }
-    ];
+    let blocks = []; // Empty initially
 
     // ----------------
     // State — Runtime
@@ -97,8 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeBlockId = null;
     let isDragging = false;
     let isResizing = false;
+    let isEditingText = false; // Flag for inline edit
 
-    let isContextMenuOpen = false;
+    let contextMenuEl = null; // Reference to open menu
 
     let lastClientY = null;
     let currentGhostY = null;
@@ -108,11 +258,57 @@ document.addEventListener('DOMContentLoaded', () => {
     let initialBlockHeight = 0;
     let activeElement = null;
 
+    // Auto-Scroll State
+    let autoScrollAF = null;
+    let scrollDirection = 0;
+
     // ----------------
-    // Context Menu Handling
+    // Context Menu System (Custom)
     // ----------------
-    canvas.addEventListener('contextmenu', () => {
-        isContextMenuOpen = true;
+    function closeContextMenu() {
+        if (contextMenuEl) {
+            contextMenuEl.remove();
+            contextMenuEl = null;
+        }
+    }
+
+    function openColorMenu(x, y, blockId) {
+        closeContextMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'uo-context-menu';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        NEON_PALETTE.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = 'uo-color-swatch';
+            swatch.style.backgroundColor = color;
+            swatch.onpointerdown = (e) => {
+                e.stopPropagation(); // Stop propagation to canvas
+                updateBlockColor(blockId, color);
+                closeContextMenu();
+            };
+            menu.appendChild(swatch);
+        });
+
+        document.body.appendChild(menu);
+        contextMenuEl = menu;
+    }
+
+    function updateBlockColor(blockId, color) {
+        const block = blocks.find(b => b.id === blockId);
+        if (block) {
+            block.color = color;
+            renderBlocks();
+        }
+    }
+
+    // Global click listener to close menu
+    document.addEventListener('pointerdown', (e) => {
+        if (contextMenuEl && !contextMenuEl.contains(e.target)) {
+            closeContextMenu();
+        }
     });
 
     // ----------------
@@ -126,6 +322,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rendering
     // ----------------
     function renderBlocks() {
+        // Optimization: Do not re-render global blocks if we are just editing text
+        if (isEditingText) return;
+
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
 
         blocks.forEach(block => {
@@ -151,35 +350,130 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.backgroundColor = block.color;
 
             el.innerHTML = `
+                <div class="uo-delete-btn" title="Remove">×</div>
                 <div class="uo-block-content">
-                    <span class="uo-block-label">${block.label}</span>
-                    <span class="uo-block-meta">${snappedDuration} min</span>
+                    <span class="uo-block-label" title="Click to edit">${block.label}</span>
+                    <span class="uo-block-meta">${snappedDuration}m</span>
                 </div>
                 <div class="uo-resizer"></div>
             `;
+
+            // === CRITICAL FIX: Split Drag Prevention and Edit Activation ===
+
+            const labelEl = el.querySelector('.uo-block-label');
+
+            // 1. POINTERDOWN: "Stop Drag".
+            // We consume the event so it doesn't bubble to the block's drag listener.
+            // This satisfies: "Il testo NON deve far partire drag"
+            labelEl.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+            });
+
+            // 2. CLICK: "Start Edit".
+            // We use click because it implies a full press/release cycle.
+            // It is safe to manipulate DOM here.
+            labelEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startInlineEdit(block.id, labelEl);
+            });
+
+            // Delete button logic
+            const deleteEl = el.querySelector('.uo-delete-btn');
+            deleteEl.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                deleteBlock(block.id);
+            });
+
+            // Context Menu
+            el.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openColorMenu(e.pageX, e.pageY, block.id);
+            });
 
             canvas.appendChild(el);
         });
     }
 
+    // ----------------
+    // Inline Editing Logic (Fix Applied)
+    // ----------------
+    function startInlineEdit(blockId, labelEl) {
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        isEditingText = true;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = block.label;
+        input.className = 'uo-block-input';
+
+        // Swap elements
+        labelEl.replaceWith(input);
+
+        // === CRITICAL FIX: Async Focus ===
+        // Wait for the browser to paint the new input before focusing.
+        // requestAnimationFrame creates the perfect delay.
+        requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+        });
+
+        const save = () => {
+            // Guard against double calls (blur + enter)
+            if (!isEditingText) return;
+
+            isEditingText = false;
+            if (input.value.trim()) {
+                block.label = input.value.trim();
+            }
+            renderBlocks();
+        };
+
+        // Events
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                input.blur();
+            }
+            e.stopPropagation(); // Stop hotkeys/canvas listeners
+        });
+
+        // Stop bubbling so clicking the input doesn't trigger canvas ops
+        input.addEventListener('pointerdown', e => e.stopPropagation());
+        input.addEventListener('click', e => e.stopPropagation());
+    }
+
+    function deleteBlock(blockId) {
+        blocks = blocks.filter(b => b.id !== blockId);
+        activeBlockId = null;
+        renderBlocks();
+    }
+
     renderBlocks();
 
     // ----------------
-    // Ghost Logic (Source of Truth)
+    // Coordinate Helper
+    // ----------------
+    function getCanvasRelativeY(clientY) {
+        const rect = canvas.getBoundingClientRect();
+        return clientY - rect.top;
+    }
+
+    // ----------------
+    // Ghost Logic
     // ----------------
     function updateGhostPosition(clientY) {
         if (!ghost) return;
 
-        if (isDragging || isResizing || clientY === null) {
+        if (isDragging || isResizing || clientY === null || isEditingText) {
             ghost.style.opacity = '0';
             currentGhostY = null;
             return;
         }
 
-        const rect = canvas.getBoundingClientRect();
-        const scrollTop = scroller ? scroller.scrollTop : 0;
-
-        const rawY = (clientY - rect.top) + scrollTop;
+        const rawY = getCanvasRelativeY(clientY);
         const maxY = canvas.scrollHeight;
 
         const clampedY = clamp(rawY, 0, maxY);
@@ -202,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Collision Handling — Phase 1
+    // Collision Handling
     // ----------------
     function getCollisionLimits(activeId) {
         const activeBlock = blocks.find(b => b.id === activeId);
@@ -230,111 +524,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Pointer Down
+    // Auto-Scroll Engine
     // ----------------
-    canvas.addEventListener('pointerdown', (e) => {
-
-        // Consume first click after context menu
-        if (
-            isContextMenuOpen &&
-            e.pointerType === 'mouse' &&
-            e.button === 0
-        ) {
-            isContextMenuOpen = false;
+    function performAutoScroll() {
+        if (scrollDirection === 0 || !scroller) {
+            cancelAnimationFrame(autoScrollAF);
+            autoScrollAF = null;
             return;
         }
 
-        // Block right & middle click
-        if (e.pointerType === 'mouse' && e.button !== 0) {
-            return;
+        scroller.scrollTop += (scrollDirection * SCROLL_SPEED);
+
+        // Force logic update since mouse is stationary but canvas moved
+        if (lastClientY !== null) {
+            handlePointerMoveLogic(lastClientY);
         }
 
-        const targetBlock = e.target.closest('.uo-timeline-block');
-        const targetResizer = e.target.closest('.uo-resizer');
+        autoScrollAF = requestAnimationFrame(performAutoScroll);
+    }
 
-        const rect = canvas.getBoundingClientRect();
-        const scrollTop = scroller ? scroller.scrollTop : 0;
-        const rawY = (e.clientY - rect.top) + scrollTop;
+    function checkAutoScroll(clientY) {
+        if (!scroller) return;
 
-        if (ghost) ghost.style.opacity = '0';
+        const rect = scroller.getBoundingClientRect();
+        const distTop = clientY - rect.top;
+        const distBottom = rect.bottom - clientY;
 
-        // --- RESIZE ---
-        if (targetResizer && targetBlock) {
-            e.preventDefault();
-            isResizing = true;
-            activeElement = targetBlock;
-            activeBlockId = targetBlock.dataset.blockId;
+        let newDirection = 0;
 
-            targetResizer.setPointerCapture(e.pointerId);
-
-            dragStartY = rawY;
-            initialBlockHeight = parseFloat(targetBlock.style.height);
-            initialBlockTop = parseFloat(targetBlock.style.top);
-
-            renderBlocks();
-            return;
+        if (distTop < SCROLL_THRESHOLD) {
+            newDirection = -1; // Up
+        } else if (distBottom < SCROLL_THRESHOLD) {
+            newDirection = 1;  // Down
         }
 
-        // --- DRAG / DELETE ---
-        if (targetBlock) {
-            if (e.altKey) {
-                blocks = blocks.filter(b => b.id !== targetBlock.dataset.blockId);
-                activeBlockId = null;
-                renderBlocks();
-                return;
+        if (newDirection !== scrollDirection) {
+            scrollDirection = newDirection;
+
+            if (scrollDirection !== 0 && !autoScrollAF) {
+                performAutoScroll();
+            } else if (scrollDirection === 0 && autoScrollAF) {
+                cancelAnimationFrame(autoScrollAF);
+                autoScrollAF = null;
             }
-
-            e.preventDefault();
-            isDragging = true;
-            activeElement = targetBlock;
-            activeBlockId = targetBlock.dataset.blockId;
-
-            targetBlock.setPointerCapture(e.pointerId);
-
-            dragStartY = rawY;
-            initialBlockTop = parseFloat(targetBlock.style.top);
-
-            renderBlocks();
-            return;
         }
+    }
 
-        // --- CREATE ---
-        if (currentGhostY === null) return;
-
-        activeBlockId = null;
-
-        const minutesFromStart =
-            (currentGhostY / SLOT_HEIGHT) * UNIT_MINUTES;
-
-        const newBlock = {
-            id: generateId(),
-            tStart: RANGE_START_MINUTES + minutesFromStart,
-            duration: snapToUnit(DEFAULT_DURATION),
-            label: 'NEW SLOT',
-            color: '#c9169a'
-        };
-
-        blocks.push(newBlock);
-        activeBlockId = newBlock.id;
-        renderBlocks();
-    });
+    function stopAutoScroll() {
+        scrollDirection = 0;
+        if (autoScrollAF) {
+            cancelAnimationFrame(autoScrollAF);
+            autoScrollAF = null;
+        }
+    }
 
     // ----------------
-    // Pointer Move
+    // Core Logic
     // ----------------
-    canvas.addEventListener('pointermove', (e) => {
-        lastClientY = e.clientY;
-
+    function handlePointerMoveLogic(clientY) {
         if (!isDragging && !isResizing) {
-            updateGhostPosition(lastClientY);
+            updateGhostPosition(clientY);
             return;
         }
 
         if (!activeElement) return;
 
-        const rect = canvas.getBoundingClientRect();
-        const scrollTop = scroller ? scroller.scrollTop : 0;
-        const currentRawY = (e.clientY - rect.top) + scrollTop;
+        // Use fixed coordinate helper
+        const currentRawY = getCanvasRelativeY(clientY);
         const deltaY = currentRawY - dragStartY;
 
         const limits = getCollisionLimits(activeBlockId);
@@ -381,21 +637,150 @@ document.addEventListener('DOMContentLoaded', () => {
             activeElement.style.top =
                 `${minutesToPixels(clampedStart - RANGE_START_MINUTES)}px`;
         }
+    }
+
+    // ----------------
+    // Pointer Down (Global Canvas)
+    // ----------------
+    canvas.addEventListener('pointerdown', (e) => {
+        // Close menu if clicking on canvas
+        closeContextMenu();
+
+        // 1. Check strict conditions
+        if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left click for canvas ops
+
+        const targetBlock = e.target.closest('.uo-timeline-block');
+        const targetResizer = e.target.closest('.uo-resizer');
+
+        // Capture coordinates immediately
+        const rawY = getCanvasRelativeY(e.clientY);
+
+        if (ghost) ghost.style.opacity = '0';
+
+        // --- VISUAL UPDATE HELPER ---
+        const setActiveVisuals = (blockEl) => {
+            canvas.querySelectorAll('.uo-timeline-block.is-active').forEach(el =>
+                el.classList.remove('is-active')
+            );
+            if (blockEl) blockEl.classList.add('is-active');
+        };
+
+        // --- RESIZE ---
+        if (targetResizer && targetBlock) {
+            e.preventDefault();
+            isResizing = true;
+            activeElement = targetBlock;
+            activeBlockId = targetBlock.dataset.blockId;
+
+            targetResizer.setPointerCapture(e.pointerId);
+
+            dragStartY = rawY;
+            initialBlockHeight = parseFloat(targetBlock.style.height);
+            initialBlockTop = parseFloat(targetBlock.style.top);
+
+            setActiveVisuals(targetBlock);
+            return;
+        }
+
+        // --- DRAG / DELETE (ALT) ---
+        if (targetBlock) {
+            // Power user Delete
+            if (e.altKey) {
+                deleteBlock(targetBlock.dataset.blockId);
+                return;
+            }
+
+            // --- DRAG LOGIC ---
+            // Note: Because we used stopPropagation on .uo-block-label (pointerdown),
+            // this block will NOT run if the user clicked the text label.
+            // It will only run if clicking the block background.
+
+            e.preventDefault();
+            isDragging = true;
+            activeElement = targetBlock;
+            activeBlockId = targetBlock.dataset.blockId;
+
+            targetBlock.setPointerCapture(e.pointerId);
+
+            dragStartY = rawY;
+            initialBlockTop = parseFloat(targetBlock.style.top);
+
+            setActiveVisuals(targetBlock);
+            return;
+        }
+
+        // --- CREATE (SMART PLACEMENT) ---
+        if (currentGhostY === null) return;
+
+        activeBlockId = null;
+        const minutesFromStart = (currentGhostY / SLOT_HEIGHT) * UNIT_MINUTES;
+
+        let tStart = RANGE_START_MINUTES + minutesFromStart;
+        let tDuration = snapToUnit(DEFAULT_DURATION);
+
+        // Smart Placement Logic
+        let limitStart = RANGE_START_MINUTES;
+        const totalMinutes = (canvas.scrollHeight / SLOT_HEIGHT) * UNIT_MINUTES;
+        let limitEnd = RANGE_START_MINUTES + totalMinutes;
+
+        for (const b of blocks) {
+            const bEnd = b.tStart + b.duration;
+            if (bEnd <= tStart) limitStart = Math.max(limitStart, bEnd);
+            if (b.tStart >= tStart) limitEnd = Math.min(limitEnd, b.tStart);
+        }
+
+        if (tStart + tDuration > limitEnd) {
+            const shiftedStart = limitEnd - tDuration;
+            if (shiftedStart >= limitStart) {
+                tStart = shiftedStart;
+            } else {
+                tStart = limitStart;
+                tDuration = Math.max(UNIT_MINUTES, limitEnd - limitStart);
+            }
+        }
+
+        const newBlock = {
+            id: generateId(),
+            tStart: tStart,
+            duration: tDuration,
+            label: 'NEW SLOT',
+            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)] // Random Neon
+        };
+
+        blocks.push(newBlock);
+        activeBlockId = newBlock.id;
+        renderBlocks();
+    });
+
+    // ----------------
+    // Pointer Move
+    // ----------------
+    canvas.addEventListener('pointermove', (e) => {
+        lastClientY = e.clientY;
+
+        if (isDragging || isResizing) {
+            checkAutoScroll(e.clientY);
+        }
+        handlePointerMoveLogic(e.clientY);
     });
 
     // ----------------
     // Pointer Leave
     // ----------------
     canvas.addEventListener('pointerleave', () => {
-        lastClientY = null;
-        currentGhostY = null;
-        if (ghost) ghost.style.opacity = '0';
+        if (!isDragging && !isResizing) {
+            lastClientY = null;
+            currentGhostY = null;
+            if (ghost) ghost.style.opacity = '0';
+        }
     });
 
     // ----------------
     // Pointer Up
     // ----------------
     canvas.addEventListener('pointerup', () => {
+        stopAutoScroll();
+
         if (!isDragging && !isResizing) return;
 
         if (activeElement) {
