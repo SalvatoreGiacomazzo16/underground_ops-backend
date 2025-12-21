@@ -9,10 +9,6 @@
 
  @vite(['resources/sass/main.scss', 'resources/js/app.js'])
 </head>
-{{-- Timeline Ops Button --}}
-@if (!isset($hideTimelineOps))
-    @include('components.timeline-ops-button')
-@endif
 
 <body class="uo-bg-deep-dark">
     <div id="uo-toasts"></div>
@@ -40,11 +36,6 @@
 
         </div>
     </div>
-
-    {{-- TIMELINE OPS BUTTON --}}
-@if (!isset($hideTimelineOps))
-    @include('components.timeline-ops-button')
-@endif
 
 
 @if (session('success'))

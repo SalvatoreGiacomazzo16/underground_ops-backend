@@ -147,8 +147,15 @@
                                 {{ strtoupper($event->event_type) }}
                             </span>
                         </div>
-
+                    {{-- TIMELINE ENTRY POINT --}}
+<div class="uo-event-card-footer mt-3">
+    <a href="{{ route('admin.events.timeline', $event) }}"
+       class="uo-timeline-btn">
+        Organizza la serata
+    </a>
+</div>
                     </div>
+
 
                 @endforeach
 

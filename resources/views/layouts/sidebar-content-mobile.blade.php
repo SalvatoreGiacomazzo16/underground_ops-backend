@@ -34,12 +34,4 @@
     </li>
 
 
-       {{-- Timeline Ops --}}
-    <li>
-        <a href="{{ route('admin.timeline.index') }}"
-           class="sidebar-link  {{ Request::routeIs('admin.timeline.*') ? 'active' : '' }}" ">
-            <i class="fas fa-users-cog me-2"></i> Timeline Ops
-        </a>
-    </li>
-
 </ul>

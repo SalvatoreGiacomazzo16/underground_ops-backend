@@ -2,6 +2,10 @@
 // Timeline Ops — Context & Config
 // ================================
 
+// [FIX] Rimosse le vecchie costanti che causavano il disallineamento della chiave
+// const EVENT_ID = window.UO_EVENT_ID; // Rimosso
+// const STORAGE_KEY = ...;             // Rimosso
+
 // MOCK CONTEXT (Simuliamo ciò che Blade inietterà)
 // In produzione: window.UO_CONTEXT fornito dal backend
 const CTX = window.UO_CONTEXT || {
@@ -15,7 +19,7 @@ const RANGE_START_MINUTES = 12 * 60; // 12:00
 
 const NEON_PALETTE = [
     '#ff00ff', // Magenta Neon
-    '#00ffff', // Cyan Neon
+    '#04D9FF', // Cyan Neon
     '#9d00ff', // Purple Neon
     '#ff9900', // Orange Neon
     '#d9b802', // Gold/Dark Yellow
@@ -78,132 +82,132 @@ function injectStyles() {
     if (document.getElementById(styleId)) return;
 
     const css = `
-        /* --- Block Internals --- */
-        .uo-block-content {
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            padding: 4px;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
+/* --- Block Internals --- */
+.uo-block-content {
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
 
-        .uo-block-label {
-            pointer-events: auto;
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: text;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            padding: 2px 4px;
-            margin: -2px -4px;
-            border-radius: 2px;
-            user-select: none;
-        }
+.uo-block-label {
+    pointer-events: auto;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: text;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 2px;
+    user-select: none;
+}
 
-        .uo-block-label:hover {
-            background: rgba(255,255,255,0.1);
-        }
+.uo-block-label:hover {
+    background: rgba(255,255,255,0.1);
+}
 
-        .uo-block-input {
-            pointer-events: auto;
-            all: unset;
-            display: block;
-            width: 100%;
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            background: rgba(0,0,0,0.5);
-            color: white;
-            border-radius: 2px;
-            padding: 2px 4px;
-            margin: -2px -4px;
-            box-sizing: border-box;
-            cursor: text;
-        }
+.uo-block-input {
+    pointer-events: auto;
+    all: unset;
+    display: block;
+    width: 100%;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border-radius: 2px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    box-sizing: border-box;
+    cursor: text;
+}
 
-        .uo-block-input::selection {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
+.uo-block-input::selection {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
 
-        .uo-block-meta {
-            font-size: 9px;
-            opacity: 0.8;
-            margin-top: 2px;
-        }
+.uo-block-meta {
+    font-size: 9px;
+    opacity: 0.8;
+    margin-top: 2px;
+}
 
-        /* --- Delete Action --- */
-        .uo-delete-btn {
-            pointer-events: auto;
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            width: 16px;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: sans-serif;
-            font-size: 14px;
-            line-height: 1;
-            font-weight: bold;
-            color: rgba(255,255,255,0.7);
-            background: rgba(0,0,0,0.3);
-            border-radius: 2px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.1s ease, background 0.1s;
-            z-index: 10;
-        }
+/* --- Delete Action --- */
+.uo-delete-btn {
+    pointer-events: auto;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: bold;
+    color: rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.1s ease, background 0.1s;
+    z-index: 10;
+}
 
-        .uo-timeline-block:hover .uo-delete-btn {
-            opacity: 1;
-        }
+.uo-timeline-block:hover .uo-delete-btn {
+    opacity: 1;
+}
 
-        .uo-delete-btn:hover {
-            background: rgba(255, 0, 0, 0.8);
-            color: white;
-        }
+.uo-delete-btn:hover {
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+}
 
-        /* --- Context Menu (Minimal) --- */
-        .uo-context-menu {
-            position: fixed;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            padding: 8px;
-            border-radius: 4px;
-            display: flex;
-            gap: 6px;
-            z-index: 9999;
-            animation: fadeIn 0.1s ease-out;
-        }
+/* --- Context Menu --- */
+.uo-context-menu {
+    position: fixed;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    padding: 8px;
+    border-radius: 4px;
+    display: flex;
+    gap: 6px;
+    z-index: 9999;
+    animation: fadeIn 0.1s ease-out;
+}
 
-        .uo-color-swatch {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.1s;
-        }
+.uo-color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.1s;
+}
 
-        .uo-color-swatch:hover {
-            transform: scale(1.2);
-            border-color: white;
-        }
+.uo-color-swatch:hover {
+    transform: scale(1.2);
+    border-color: white;
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
     `;
 
     const styleEl = document.createElement('style');
@@ -211,6 +215,7 @@ function injectStyles() {
     styleEl.textContent = css;
     document.head.appendChild(styleEl);
 }
+
 
 // ================================
 // Core Math
@@ -292,7 +297,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------
     // State — Data (INITIAL LOAD)
     // ----------------
-    // 1. Carichiamo i dati all'avvio usando il Repository
+    // [FIX] Usiamo direttamente il Repository per il caricamento
+    // Questo assicura che la chiave di lettura sia identica a quella di scrittura
     let blocks = TimelineRepository.load();
 
     // ----------------

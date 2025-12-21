@@ -29,12 +29,7 @@
         <p class="text-secondary">ARCHIVIO COMPLETO — UNDERGROUND OPS</p>
     </div>
 
-    {{-- ACTION --}}
-    <div class="uo-quick-actions mb-4">
-        <a href="{{ route('admin.events.create') }}" class="uo-dashboard-btn">
-            + Nuovo Evento
-        </a>
-    </div>
+
 
     {{-- TABELLA EVENTI --}}
 

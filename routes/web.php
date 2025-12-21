@@ -10,6 +10,9 @@ use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\EventStaffController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\ManagerDashboardController;
+use App\Http\Controllers\Admin\EventTimelineController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -38,33 +41,46 @@ Route::middleware(['auth'])
 
         /*
         |--------------------------------------------------------------------------
-        | EVENTS CRUD + STAFF EVENTO
+        | EVENTS CRUD + SEZIONI EVENTO
         |--------------------------------------------------------------------------
         */
-        Route::prefix('events')->name('events.')->group(function () {
+        Route::prefix('events')
+            ->name('events.')
+            ->group(function () {
 
-            // LISTE
-            Route::get('/',        [AdminEventController::class, 'index'])->name('index');
-            Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
+                // LISTE
+                Route::get('/',        [AdminEventController::class, 'index'])->name('index');
+                Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
 
-            // CREATE
-            Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
-            Route::post('/',       [AdminEventController::class, 'store'])->name('store');
+                // CREATE
+                Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
+                Route::post('/',       [AdminEventController::class, 'store'])->name('store');
 
-            // EDIT / UPDATE
-            Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
-            Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
+                // EDIT / UPDATE
+                Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
+                Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
 
-            // DELETE
-            Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
+                // DELETE
+                Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
 
-            // 👥 STAFF ASSOCIATO ALL’EVENTO
-            Route::get('/{event}/staff', [EventStaffController::class, 'edit'])
-                ->name('staff.edit');
+                // 👥 STAFF ASSOCIATO ALL’EVENTO
+                Route::get('/{event}/staff', [EventStaffController::class, 'edit'])
+                    ->name('staff.edit');
 
-            Route::put('/{event}/staff', [EventStaffController::class, 'update'])
-                ->name('staff.update');
-        });
+                Route::put('/{event}/staff', [EventStaffController::class, 'update'])
+                    ->name('staff.update');
+
+                /*
+                |--------------------------------------------------------------------------
+                | TIMELINE EVENTO (CUORE OPERATIVO)
+                |--------------------------------------------------------------------------
+                |
+                | La timeline NON esiste senza evento
+                |
+                */
+                Route::get('/{event}/timeline', [EventTimelineController::class, 'show'])
+                    ->name('timeline');
+            });
 
         /*
         |--------------------------------------------------------------------------
@@ -110,20 +126,6 @@ Route::get('/db-test', function () {
         return "DB ERROR → " . $e->getMessage();
     }
 });
-
-Route::prefix('admin')
-    ->name('admin.')
-    ->middleware('auth')
-    ->group(function () {
-
-        Route::get('/timeline', function () {
-            return view('dashboard.timeline.timeline-ops-index');
-        })->name('timeline.index');
-
-    });
-
-
-
 
 /*
 |--------------------------------------------------------------------------

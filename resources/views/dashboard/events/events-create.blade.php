@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@php($hideTimelineOps = true)
+
 @if ($errors->any())
     <div class="alert alert-danger mb-4">
         <ul class="mb-0">

@@ -1,10 +1,16 @@
 @extends('layouts.admin')
 
-{{-- Variabile per layout admin (opzionale, basata sul tuo codice originale) --}}
-@php($hideTimelineOps = true)
+
 
 @section('content')
 <div class="uo-timeline">
+<script>
+    window.UO_CONTEXT = {
+        userId: {{ auth()->id() }},
+        eventId: {{ $event->id }}
+    };
+</script>
+
 
     {{-- HEADER TIMELINE --}}
     {{-- Header sticky con titolo e metadati evento --}}
