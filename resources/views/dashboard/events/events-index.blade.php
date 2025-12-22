@@ -84,7 +84,7 @@
                         ][$event->status] ?? 'uo-badge-default';
                     @endphp
 
-                    <div class="uo-event-card" data-event-card>
+                    <div class="uo-event-card" data-event-card  data-event-id="{{ $event->id }}">
 
                         {{-- HEADER --}}
                         <div class="uo-event-card-header d-flex justify-content-between align-items-start gap-3">
@@ -147,13 +147,7 @@
                                 {{ strtoupper($event->event_type) }}
                             </span>
                         </div>
-                    {{-- TIMELINE ENTRY POINT --}}
-<div class="uo-event-card-footer mt-3">
-    <a href="{{ route('admin.events.timeline', $event) }}"
-       class="uo-timeline-btn">
-        Organizza la serata
-    </a>
-</div>
+
                     </div>
 
 
@@ -170,4 +164,71 @@
     </div>
 
 </div>
+@include('dashboard.events.partials.timeline-btn', ['activeEventId' => null])
+
 @endsection
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const eventCards = document.querySelectorAll('[data-event-card]');
+    const timelineCta = document.querySelector('[data-timeline-cta]');
+
+    if (!eventCards.length || !timelineCta) return;
+
+    let selectedEventId = null;
+    const hrefTemplate = timelineCta.dataset.hrefTemplate;
+
+    function clearSelection() {
+        eventCards.forEach(card =>
+            card.classList.remove('is-selected')
+        );
+
+        selectedEventId = null;
+
+        timelineCta.classList.remove('is-active');
+        timelineCta.classList.add('is-disabled');
+        timelineCta.setAttribute('aria-disabled', 'true');
+        timelineCta.setAttribute('href', '#');
+    }
+
+    function selectEvent(card) {
+        const eventId = card.dataset.eventId;
+        if (!eventId) return;
+
+        eventCards.forEach(c =>
+            c.classList.remove('is-selected')
+        );
+
+        card.classList.add('is-selected');
+        selectedEventId = eventId;
+
+        timelineCta.classList.remove('is-disabled');
+        timelineCta.classList.add('is-active');
+        timelineCta.removeAttribute('aria-disabled');
+
+        timelineCta.href = hrefTemplate.replace('__EVENT__', eventId);
+    }
+
+    // 🔁 CLICK SULLE CARD (toggle)
+    eventCards.forEach(card => {
+        card.addEventListener('click', () => {
+
+            if (card.classList.contains('is-selected')) {
+                clearSelection();       // ⬅ DESELECT
+            } else {
+                selectEvent(card);      // ⬅ SELECT
+            }
+
+        });
+    });
+
+    // 🛡️ Sicurezza: CTA senza selezione
+    timelineCta.addEventListener('click', (e) => {
+        if (!selectedEventId) {
+            e.preventDefault();
+        }
+    });
+
+});
+</script>
+

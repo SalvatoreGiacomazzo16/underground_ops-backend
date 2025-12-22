@@ -265,89 +265,137 @@
     }
 }
 
-.uo-dashboard-btn.is-active {
-    background: rgba(201, 22, 154, 0.25);
-    border-color: rgba(201, 22, 154, 0.8);
-    box-shadow: 0 0 20px rgba(201, 22, 154, 0.35);
-    pointer-events: none;
-}
+/* =====================================================
+   TIMELINE CTA — ORGANIZZA LA SERATA
+===================================================== */
 
-.uo-timeline-btn {
+.uo-timeline-cta {
     position: fixed;
-    bottom: 90px;
-    right: 32px;
-    z-index: $z-timeline-btn;
-
-    text-decoration: none;
+    right: 76px;
+    bottom: 72px;
+    z-index: 9999;
 
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 
-    padding: 14px 20px;
-
-    background: #000;
-    color: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.85);
+    padding: 12px 16px;
     border-radius: 999px;
-
+    text-decoration: none;
     font-weight: 600;
+
+    color: #fff;
+    background: #000;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 
     transition:
         transform 0.25s ease,
-        box-shadow 0.25s ease,
-        border-color 0.25s ease;
-
+        opacity 0.25s ease,
+        border-color 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
-.uo-timeline-btn::before {
+/* glow layer */
+.uo-timeline-cta::before {
     content: "";
     position: absolute;
     inset: -3px;
     border-radius: inherit;
 
     background: linear-gradient(120deg,
-            rgba(228, 108, 217, 0.8), // magenta
-            rgba(143, 92, 255, 0.8), // violet
-            rgba(77, 224, 255, 0.8), // cyan
+            rgba(228, 108, 217, 0.8),
+            rgba(143, 92, 255, 0.8),
+            rgba(77, 224, 255, 0.8),
             rgba(228, 108, 217, 0.8));
 
     filter: blur(10px);
     opacity: 0;
     z-index: -1;
-
     transition: opacity 0.35s ease;
 }
 
-.uo-timeline-btn:hover {
+/* =====================================================
+   DISABLED — FREDDO METALLICO SPENTO
+===================================================== */
+
+.uo-timeline-cta.is-disabled {
+    pointer-events: none;
+    opacity: 0.95;
+
+    color: rgba(230, 230, 230, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+
+    background:
+        linear-gradient(135deg,
+            rgba(255, 255, 255, 0.38),
+            rgba(210, 210, 210, 0.22) 35%,
+            rgba(160, 160, 160, 0.28) 55%,
+            rgba(120, 120, 120, 0.18)),
+        rgba(28, 28, 28, 0.92);
+
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.55),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.45),
+        0 10px 26px rgba(0, 0, 0, 0.55);
+}
+
+/* =====================================================
+   ACTIVE = HOVER PERMANENTE (IL CORE)
+===================================================== */
+
+.uo-timeline-cta.is-active {
     transform: translateY(-2px);
     border-color: rgba(255, 255, 255, 1);
 
     box-shadow:
-        0 0 0 rgba(0, 0, 0, 0); // niente ombra sporca
+        0 0 0 rgba(0, 0, 0, 0);
 }
 
-.uo-timeline-btn:hover::before {
+.uo-timeline-cta.is-active::before {
     opacity: 0.65;
 }
 
-.uo-timeline-btn:hover .uo-timeline-btn__label {
+.uo-timeline-cta.is-active .uo-timeline-cta__label {
     text-shadow: 0 0 8px rgba(228, 108, 217, 0.45);
 }
 
+.uo-timeline-cta.is-active .uo-timeline-cta__icon {
+    animation: uo-lightning-flash 1.2s ease-out infinite;
+}
 
-.uo-timeline-btn__icon {
+/* boost leggero in hover */
+.uo-timeline-cta.is-active:hover {
+    transform: translateY(-3px);
+}
+
+.uo-timeline-cta.is-active:hover::before {
+    opacity: 0.85;
+}
+
+/* =====================================================
+   ICON & LABEL
+===================================================== */
+
+.uo-timeline-cta__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     line-height: 1;
-
     color: #ffffff;
-
-    transition: color 0.2s ease;
 }
+
+.uo-timeline-cta__label {
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+}
+
+/* =====================================================
+   LIGHTNING ANIMATION
+===================================================== */
 
 @keyframes uo-lightning-flash {
     0% {
@@ -369,14 +417,30 @@
     }
 }
 
-.uo-timeline-btn:hover .uo-timeline-btn__icon {
-    animation: uo-lightning-flash 0.8s ease-out;
-}
-
-
+/* =====================================================
+   MOBILE
+===================================================== */
 
 @media (max-width: 768px) {
-    .uo-timeline-btn {
-        bottom: 146px;
+    .uo-timeline-cta {
+        right: 20px;
+        bottom: 70px;
+
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .uo-timeline-cta__label {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .uo-timeline-cta {
+        padding: 10px 12px;
+    }
+
+    .uo-timeline-cta__label {
+        font-size: 0.85rem;
     }
 }
