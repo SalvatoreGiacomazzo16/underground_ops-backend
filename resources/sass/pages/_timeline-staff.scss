@@ -1,0 +1,112 @@
+/* ============================
+   TIMELINE BLOCK — STAFF ROW
+============================ */
+
+.uo-block-staff {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    pointer-events: auto;
+    /* Permette l'interazione dentro il content */
+}
+
+.uo-block-staff--empty {
+    justify-content: flex-start;
+}
+
+.uo-block-staff-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.uo-staff-chip {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(120, 210, 255, 0.65);
+    white-space: nowrap;
+}
+
+/* Pulsante Add Staff (Versione Inline/Content) */
+.uo-block-staff-add {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: rgba(120, 210, 255, 0.9);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px dashed rgba(120, 210, 255, 0.5);
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.uo-block-staff-add:hover {
+    background: rgba(120, 210, 255, 0.2);
+    color: #fff;
+    border-style: solid;
+}
+
+/* ============================
+   TIMELINE BLOCK — ACTIONS (TOP RIGHT)
+============================ */
+
+.uo-block-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    /* Distanza tra X e + */
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+}
+
+.uo-timeline-block:hover .uo-block-actions,
+.uo-timeline-block.is-active .uo-block-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Stile comune per pulsanti azione (X e + Quick Add) */
+.uo-delete-btn,
+.uo-btn-quick-add {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.uo-delete-btn:hover {
+    background: #ff4444;
+    border-color: #ff0000;
+}
+
+.uo-btn-quick-add:hover {
+    background: #00d4ff;
+    border-color: #fff;
+}
+
+.uo-staff-input {
+    all: unset;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    border: 1px dashed rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+}

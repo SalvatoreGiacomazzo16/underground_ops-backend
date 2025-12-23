@@ -60,7 +60,9 @@ const TimelineRepository = {
                 tStart: b.tStart,
                 duration: b.duration,
                 label: b.label,
-                color: b.color
+                color: b.color,
+                // [ESTENSIONE] Supporto per la persistenza dello staff
+                staff: b.staff || []
             }));
 
             // In futuro: await fetch('/api/timeline/save', { body: ... })
@@ -84,7 +86,6 @@ function injectStyles() {
     const css = `
 /* --- Block Internals --- */
 .uo-block-content {
-    pointer-events: none;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -115,6 +116,18 @@ function injectStyles() {
     background: rgba(255,255,255,0.1);
 }
 
+/* [ESTENSIONE] Stile minimale per lo staff */
+.uo-block-staff {
+   pointer-events: auto;
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .uo-block-input {
     pointer-events: auto;
     all: unset;
@@ -140,7 +153,7 @@ function injectStyles() {
 .uo-block-meta {
     font-size: 9px;
     opacity: 0.8;
-    margin-top: 2px;
+    margin-top: auto;
 }
 
 /* --- Delete Action --- */
@@ -273,6 +286,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.min(Math.max(value, min), max);
     }
 
+    // [ESTENSIONE] Helper per il rendering della riga staff
+    function renderStaffRow(staff = []) {
+        if (!staff || staff.length === 0) return '';
+        const MAX_VISIBLE = 2;
+        const visible = staff.slice(0, MAX_VISIBLE);
+        const moreCount = staff.length - MAX_VISIBLE;
+
+        const names = visible.map(s =>
+            `${s.name}${s.isQuick ? ' ⚡' : ''}`
+        ).join(' · ');
+
+        const moreLabel = moreCount > 0 ? ` · +${moreCount}` : '';
+        return `<div class="uo-block-staff">${names}${moreLabel}</div>`;
+    }
+
     // ----------------
     // References
     // ----------------
@@ -298,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // State — Data (INITIAL LOAD)
     // ----------------
     // [FIX] Usiamo direttamente il Repository per il caricamento
-    // Questo assicura che la chiave di lettura sia identica a quella di scrittura
     let blocks = TimelineRepository.load();
 
     // ----------------
@@ -388,6 +415,12 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
 
         blocks.forEach(block => {
+
+            // 🧠 sicurezza: staff sempre array
+            if (!Array.isArray(block.staff)) {
+                block.staff = [];
+            }
+
             const snappedStart = snapToUnit(block.tStart);
             const snappedDuration = snapToUnit(block.duration);
 
@@ -410,40 +443,199 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.backgroundColor = block.color;
 
             el.innerHTML = `
-                <div class="uo-delete-btn" title="Remove">×</div>
-                <div class="uo-block-content">
-                    <span class="uo-block-label" title="Click to edit">${block.label}</span>
-                    <span class="uo-block-meta">${snappedDuration}m</span>
-                </div>
-                <div class="uo-resizer"></div>
-            `;
+    <div class="uo-block-actions">
 
+        <button
+            class="uo-delete-btn"
+            title="Remove"
+        >×</button>
+    </div>
+
+    <div class="uo-block-content">
+        <span class="uo-block-label" title="Click to edit">
+            ${block.label}
+        </span>
+
+        ${renderStaffRow(block)}
+
+        <span class="uo-block-meta">
+            ${snappedDuration}m
+        </span>
+    </div>
+
+    <div class="uo-resizer"></div>
+`;
+
+
+            // ----------------
+            // Label edit
+            // ----------------
             const labelEl = el.querySelector('.uo-block-label');
 
-            labelEl.addEventListener('pointerdown', (e) => {
-                e.stopPropagation();
-            });
+            labelEl.addEventListener('pointerdown', e => e.stopPropagation());
 
-            labelEl.addEventListener('click', (e) => {
+            labelEl.addEventListener('click', e => {
                 e.stopPropagation();
                 startInlineEdit(block.id, labelEl);
             });
 
+            // ----------------
+            // Delete
+            // ----------------
             const deleteEl = el.querySelector('.uo-delete-btn');
-            deleteEl.addEventListener('pointerdown', (e) => {
+            deleteEl.addEventListener('pointerdown', e => {
                 e.stopPropagation();
                 deleteBlock(block.id);
             });
 
-            el.addEventListener('contextmenu', (e) => {
+            // ----------------
+            // Context menu (color)
+            // ----------------
+            el.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 e.stopPropagation();
                 openColorMenu(e.pageX, e.pageY, block.id);
             });
 
+            // ----------------
+            // Staff add (placeholder)
+            // ----------------
+            const addStaffBtn = el.querySelector('[data-add-staff]');
+            if (addStaffBtn) {
+                addStaffBtn.addEventListener('pointerdown', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddStaff(block.id);
+                });
+                // ----------------
+                // Staff inline rename (FAST)
+                // ----------------
+                el.querySelectorAll('.uo-staff-chip.is-quick').forEach(chipEl => {
+                    chipEl.addEventListener('pointerdown', e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const staffId = chipEl.dataset.staffId;
+                        startStaffInlineEdit(block.id, staffId, chipEl);
+                    });
+                });
+
+
+            }
+
             canvas.appendChild(el);
         });
     }
+
+    // ----------------
+    // Staff Rendering
+    // ----------------
+    function renderStaffRow(block) {
+        if (!block.staff || block.staff.length === 0) {
+            return `
+            <div class="uo-block-staff uo-block-staff--empty">
+                <button class="uo-block-staff-add" data-add-staff>
+                    + Staff
+                </button>
+            </div>
+        `;
+        }
+
+        const chips = block.staff
+            .slice(0, 3)
+            .map(member => `
+    <span
+        class="uo-staff-chip ${member.isQuick ? 'is-quick' : ''}"
+        data-staff-id="${member.id}"
+        title="${member.isQuick
+                    ? 'Aggiunto rapidamente (non salvato)'
+                    : (member.role || '')
+                }"
+    >
+        ${member.name}${member.isQuick ? ' ⚡' : ''}
+    </span>
+`)
+
+            .join('');
+
+        const extra =
+            block.staff.length > 3
+                ? `<span class="uo-staff-chip uo-staff-chip--more">
+                   +${block.staff.length - 3}
+               </span>`
+                : '';
+
+        return `
+        <div class="uo-block-staff">
+            <div class="uo-block-staff-list">
+                ${chips}
+                ${extra}
+            </div>
+            <button class="uo-block-staff-add" data-add-staff>
+                +
+            </button>
+        </div>
+    `;
+    }
+
+    // ----------------
+    // Staff Add (placeholder logic)
+    // ----------------
+    function handleAddStaff(blockId) {
+        console.log('FAST STAFF ADD', blockId);
+
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        block.staff.push({
+            id: `quick_${Date.now()}`,
+            name: 'STAFF',
+            role: null,
+            isQuick: true
+        });
+
+        TimelineRepository.save(blocks);
+        renderBlocks();
+    }
+    // ----------------
+    // Staff Inline Edit (FAST)
+    // ----------------
+    function startStaffInlineEdit(blockId, staffId, chipEl) {
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        const staff = block.staff.find(s => s.id === staffId && s.isQuick);
+        if (!staff) return;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = staff.name;
+        input.className = 'uo-staff-input';
+
+        chipEl.replaceWith(input);
+
+        requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+        });
+
+        const save = () => {
+            const val = input.value.trim();
+            staff.name = val || 'STAFF';
+
+            TimelineRepository.save(blocks);
+            renderBlocks();
+        };
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') input.blur();
+            e.stopPropagation();
+        });
+
+        input.addEventListener('pointerdown', e => e.stopPropagation());
+    }
+
 
     // ----------------
     // Inline Editing Logic
@@ -472,17 +664,14 @@ document.addEventListener('DOMContentLoaded', () => {
             isEditingText = false;
             if (input.value.trim()) {
                 block.label = input.value.trim();
-                // 3. PERSISTENZA: Testo modificato -> Save
                 TimelineRepository.save(blocks);
             }
             renderBlocks();
         };
 
         input.addEventListener('blur', save);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                input.blur();
-            }
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') input.blur();
             e.stopPropagation();
         });
 
@@ -490,15 +679,19 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('click', e => e.stopPropagation());
     }
 
+    // ----------------
+    // Delete Block
+    // ----------------
     function deleteBlock(blockId) {
         blocks = blocks.filter(b => b.id !== blockId);
         activeBlockId = null;
         renderBlocks();
-        // 4. PERSISTENZA: Blocco cancellato -> Save
         TimelineRepository.save(blocks);
     }
 
+    // INIT
     renderBlocks();
+
 
     // ----------------
     // Coordinate Helper
@@ -779,7 +972,9 @@ document.addEventListener('DOMContentLoaded', () => {
             tStart: tStart,
             duration: tDuration,
             label: 'NEW SLOT',
-            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)]
+            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)],
+            // [ESTENSIONE] Inizializzazione array staff vuoto
+            staff: []
         };
 
         blocks.push(newBlock);

@@ -12,14 +12,28 @@
 </script>
 
 
-    {{-- HEADER TIMELINE --}}
-    {{-- Header sticky con titolo e metadati evento --}}
-    <div class="uo-timeline-header">
-        <h2 class="uo-timeline-title">Timeline Ops</h2>
-        <p class="uo-timeline-meta">
-            Evento: <strong>Nome Evento</strong> • Location
-        </p>
+   {{-- HEADER TIMELINE — EVENT CONTEXT --}}
+<div class="uo-timeline-header">
+
+    <div class="uo-timeline-header__main">
+        <span class="uo-meta-label">Evento</span>
+        <strong class="uo-meta-value">
+            {{ $event->title }}
+        </strong>
     </div>
+
+    @if($event->location)
+        <div class="uo-timeline-header__sub">
+            <span class="uo-meta-separator">•</span>
+            <span class="uo-meta-value">
+                {{ $event->location->name }}
+            </span>
+        </div>
+    @endif
+
+</div>
+
+
 
     {{-- BODY --}}
     {{-- Questo è il contenitore che gestisce lo scroll verticale (scrollTop) --}}
