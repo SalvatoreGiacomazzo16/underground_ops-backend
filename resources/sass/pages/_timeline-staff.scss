@@ -3,110 +3,154 @@
 ============================ */
 
 .uo-block-staff {
-    margin-top: 6px;
+    margin-top: 4px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+    gap: 4px;
+    flex-wrap: wrap;
     pointer-events: auto;
-    /* Permette l'interazione dentro il content */
+
+    /* Gestione overflow */
+    max-height: 40px;
+    overflow: hidden;
 }
 
 .uo-block-staff--empty {
-    justify-content: flex-start;
+    opacity: 0.6;
 }
 
+/* Lista Chips */
 .uo-block-staff-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 3px;
 }
 
+/* Chip Singolo */
 .uo-staff-chip {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
+    padding: 1px 6px;
+    border-radius: 99px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+
     color: #fff;
     background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(120, 210, 255, 0.65);
+    border: 1px solid rgba(120, 210, 255, 0.3);
+
     white-space: nowrap;
+    cursor: pointer;
+
+    transition: all .15s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.7);
+        border-color: rgba(120, 210, 255, 0.8);
+        box-shadow: 0 0 5px rgba(120, 210, 255, 0.3);
+        transform: translateY(-1px);
+        z-index: 2;
+    }
 }
 
-/* Pulsante Add Staff (Versione Inline/Content) */
+/* Chip "+N" */
+.uo-staff-chip--more {
+    background: rgba(0, 0, 0, 0.3);
+    border-style: dashed;
+    opacity: 0.8;
+
+    &:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* Input Inline Staff */
+.uo-staff-input {
+    all: unset;
+    font-size: 9px;
+    padding: 0 6px;
+    height: 16px;
+    border-radius: 99px;
+    min-width: 30px;
+
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: 1px dashed rgba(255, 255, 255, 0.5);
+
+    &:focus {
+        border-style: solid;
+        border-color: #fff;
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Bottone "+ Staff" inline (Empty State) */
 .uo-block-staff-add {
-    font-size: 10px;
+    all: unset;
+    /* Reset dal JS vecchio */
+    font-size: 9px;
     font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: rgba(120, 210, 255, 0.9);
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px dashed rgba(120, 210, 255, 0.5);
+    padding: 1px 6px;
+    border-radius: 99px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+
+    color: rgba(120, 210, 255, 0.8);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed rgba(120, 210, 255, 0.4);
+
     cursor: pointer;
     transition: all .15s ease;
-}
 
-.uo-block-staff-add:hover {
-    background: rgba(120, 210, 255, 0.2);
-    color: #fff;
-    border-style: solid;
+    &:hover {
+        color: #fff;
+        background: rgba(0, 0, 0, 0.5);
+        border-style: solid;
+        border-color: rgba(120, 210, 255, 0.9);
+    }
 }
 
 /* ============================
-   TIMELINE BLOCK — ACTIONS (TOP RIGHT)
+   CONTEXT MENU (ex JS)
 ============================ */
-
-.uo-block-actions {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    /* Distanza tra X e + */
-    z-index: 10;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .15s ease;
-}
-
-.uo-timeline-block:hover .uo-block-actions,
-.uo-timeline-block.is-active .uo-block-actions {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-/* Stile comune per pulsanti azione (X e + Quick Add) */
-.uo-delete-btn,
-.uo-btn-quick-add {
-    width: 20px;
-    height: 20px;
+.uo-context-menu {
+    position: fixed;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    padding: 6px;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
+    display: flex;
+    gap: 6px;
+    z-index: 9999;
+    animation: uo-fadeIn 0.1s ease-out;
+
+    .uo-color-swatch {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: transform 0.1s;
+
+        &:hover {
+            transform: scale(1.2);
+            border-color: white;
+        }
+    }
 }
 
-.uo-delete-btn:hover {
-    background: #ff4444;
-    border-color: #ff0000;
-}
+@keyframes uo-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
 
-.uo-btn-quick-add:hover {
-    background: #00d4ff;
-    border-color: #fff;
-}
-
-.uo-staff-input {
-    all: unset;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.45);
-    color: #fff;
-    border: 1px dashed rgba(255, 255, 255, 0.6);
-    white-space: nowrap;
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

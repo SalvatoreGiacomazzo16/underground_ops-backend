@@ -5,19 +5,24 @@
 .uo-timeline {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 120px);
+    flex: 1;
+    min-height: 100vh;
 }
 
 .uo-timeline-header {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-
-    background: rgba(10, 10, 20, 0.85);
     backdrop-filter: blur(10px);
-
+    background: #0a0a14;
     padding: 16px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uo-timeline-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 10, 20, 0.75);
+    backdrop-filter: blur(10px);
+    z-index: -1;
 }
 
 .uo-timeline-title {
@@ -33,31 +38,39 @@
 }
 
 // Contenitore scrollabile principale
+// Contenitore scrollabile principale
 .uo-timeline-body {
     display: grid;
     grid-template-columns: 80px 1fr;
     flex: 1;
     overflow-y: auto;
-
-    // Smooth scrolling per UX fluida
-    scroll-behavior: smooth;
-
-    // Posizionamento relativo per calcoli offset
     position: relative;
+    min-height: 0;
+    background: #000; // 🔥 copre tutto, niente buchi
 }
 
+// Colonna asse Y
 .uo-timeline-axis {
-    background: rgba(255, 255, 255, 0.02);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #000; // 🔥 niente trasparenze strutturali
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    height: 100%;
 }
 
+// Slot asse (ok così)
+.uo-timeline-axis-slot {
+    height: 20px;
+    line-height: 20px;
+    box-sizing: border-box;
+}
+
+// Canvas blocchi
 .uo-timeline-canvas {
     position: relative;
-    background: rgba(0, 0, 0, 0.25);
-    // Permette lo scroll verticale della pagina (pan-y),
-    // ma le azioni dirette sui blocchi sono gestite via JS
+    background: #000; // 🔥 superficie continua
     touch-action: pan-y;
+    height: 100%;
 }
+
 
 // =========================================
 // BLOCCO INTERATTIVO (Refactored)
@@ -199,4 +212,150 @@
 
 .uo-meta-value {
     color: $uo-purple-light;
+}
+
+/* ==============================================
+   TIMELINE BLOCK — CORE STRUCTURE (ex JS)
+============================================== */
+
+.uo-block-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    /* Necessario per posizionamenti assoluti interni */
+}
+
+/* Label Principale */
+.uo-block-label {
+    pointer-events: auto;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: text;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    padding: 2px 4px;
+    margin: -2px -4px;
+    /* Negative margin per allineamento ottico */
+    border-radius: 2px;
+    user-select: none;
+    transition: background .15s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Input Principale (Edit Mode) */
+.uo-block-input {
+    pointer-events: auto;
+    all: unset;
+    display: block;
+    width: 100%;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 2px;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    box-sizing: border-box;
+    cursor: text;
+
+    &::selection {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+    }
+}
+
+.uo-block-meta {
+    font-size: 9px;
+    opacity: 0.8;
+    margin-top: auto;
+}
+
+/* ============================
+   TIMELINE BLOCK — ACTIONS
+============================ */
+
+.uo-block-actions {
+    position: absolute;
+    top: 4px;
+    /* Aggiustato per non toccare i bordi troppo */
+    right: 4px;
+
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    z-index: 20;
+    /* Più alto del contenuto */
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+}
+
+/* Mostra azioni su hover del blocco o se attivo */
+.uo-timeline-block:hover .uo-block-actions,
+.uo-timeline-block.is-active .uo-block-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Stile base bottone azione */
+.uo-block-action {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+
+    background: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    cursor: pointer;
+    transition: all .15s ease;
+
+    /* Icone */
+    &--staff {
+        color: rgba(120, 210, 255, 1);
+        border-color: rgba(120, 210, 255, 0.4);
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 8px rgba(120, 210, 255, 0.4);
+            border-color: rgba(120, 210, 255, 0.9);
+            transform: scale(1.05);
+        }
+    }
+
+    &--delete {
+        color: rgba(255, 100, 100, 0.9);
+        border-color: rgba(255, 100, 100, 0.3);
+
+        &:hover {
+            background: rgba(200, 0, 0, 0.8);
+            border-color: rgba(255, 0, 0, 1);
+            color: #fff;
+        }
+    }
 }
