@@ -30,7 +30,7 @@
             @include('layouts.nav-desktop')
 
             {{-- PAGE CONTENT --}}
-            <main class="admin-content container-fluid py-4">
+            <main class="admin-content p-1">
                 @yield('content')
             </main>
 
