@@ -80,7 +80,7 @@
             <div class="uo-timeline-header__sub">
                 <span class="uo-meta-separator">•</span>
                 <span class="uo-meta-value">
-                    {{ $event->location->name }}
+                   <strong>{{ $event->location->name }}</strong>
                 </span>
             </div>
         @endif
@@ -89,6 +89,11 @@
 </div>
 
 
+<script>
+    window.__TIMELINE_EVENT__ = {
+        start: "{{ $event->start_datetime }}"
+    };
+</script>
 
 
     {{-- BODY --}}
@@ -102,6 +107,9 @@
         <div class="uo-timeline-canvas">
             {{-- GHOST: Linea guida per lo snap --}}
             <div class="uo-timeline-ghost"></div>
+
+            <div class="uo-timeline-now"></div>
+
 
             {{-- I blocchi (.uo-timeline-block) verranno iniettati qui dal JS --}}
         </div>

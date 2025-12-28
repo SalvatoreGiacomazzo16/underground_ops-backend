@@ -1,13 +1,59 @@
 // ================================
 // TIMELINE.JS (MAIN CONTROLLER)
-// Punto di ingresso dell'applicazione
+// ================================
+
+// ================================
+// IMPORTS (SEMPRE IN ALTO)
 // ================================
 
 import { CONFIG, NEON_PALETTE } from './tl-config.js';
-import { snapToUnit, minutesToPixels, clamp, generateId, getCanvasRelativeY } from './tl-utils.js';
+import {
+    snapToUnit,
+    minutesToPixels,
+    clamp,
+    generateId,
+    getCanvasRelativeY
+} from './tl-utils.js';
+
 import { TimelineRepository } from './tl-storage.js';
 import { injectStyles } from './tl-style.js';
 import { renderStaffRow, generateTimeSlots } from './tl-ui-comp.js';
+
+// ================================
+// TIMELINE — EVENT CONTEXT & RANGE
+// ================================
+
+// Evento iniettato dal backend
+const EVENT_START = window.__TIMELINE_EVENT__?.start
+    ? new Date(window.__TIMELINE_EVENT__.start)
+    : null;
+
+// PRODUCT DECISION
+const TIMELINE_BEFORE_HOURS = 4;
+const TIMELINE_AFTER_HOURS = 8;
+
+// Fallback sicuro
+const EVENT_START_MINUTES = EVENT_START
+    ? EVENT_START.getHours() * 60 + EVENT_START.getMinutes()
+    : 22 * 60;
+
+// Range timeline
+const RANGE_START_MINUTES =
+    EVENT_START_MINUTES - TIMELINE_BEFORE_HOURS * 60;
+
+const RANGE_TOTAL_MINUTES =
+    (TIMELINE_BEFORE_HOURS + TIMELINE_AFTER_HOURS) * 60;
+
+
+// ================================
+// DOM READY (RIMOSSO DUPLICATO QUI - FIX ORDER)
+// ================================
+// Il blocco DOMContentLoaded duplicato è stato rimosso per evitare ReferenceError
+// su renderBlocks e conflitti di scope. L'inizializzazione è spostata in fondo.
+
+// ================================
+// TIME AXIS
+// ================================
 
 function renderTimeAxis() {
     const axis = document.getElementById('timeline-axis');
@@ -16,8 +62,8 @@ function renderTimeAxis() {
     axis.innerHTML = '';
 
     const slots = generateTimeSlots({
-        startHour: CONFIG.RANGE_START_MINUTES / 60,
-        endHour: 6,
+        rangeStartMinutes: RANGE_START_MINUTES,
+        rangeTotalMinutes: RANGE_TOTAL_MINUTES,
         unitMinutes: CONFIG.UNIT_MINUTES
     });
 
@@ -27,16 +73,68 @@ function renderTimeAxis() {
 
         if (slot.isHour) {
             el.classList.add('is-hour');
-            el.textContent = slot.displayHour;
+
+            el.textContent = `
+    ${slot.displayHour}
+    `;
         }
+
 
         axis.appendChild(el);
     });
 }
 
 
+// ================================
+// NOW LINE
+// ================================
+
+function setupNowLine() {
+    const nowLine = document.querySelector('.uo-timeline-now');
+    if (!nowLine || !EVENT_START) return;
+
+    function updateNowLine() {
+        const now = new Date();
+
+        if (now.toDateString() !== EVENT_START.toDateString()) {
+            nowLine.style.display = 'none';
+            return;
+        }
+
+        const nowMinutes =
+            now.getHours() * 60 + now.getMinutes();
+
+        const minutesFromStart =
+            nowMinutes - RANGE_START_MINUTES;
+
+        if (
+            minutesFromStart < 0 ||
+            minutesFromStart > RANGE_TOTAL_MINUTES
+        ) {
+            nowLine.style.display = 'none';
+            return;
+        }
+
+        nowLine.style.top =
+            `${minutesToPixels(minutesFromStart)}px`;
+
+        nowLine.style.display = 'block';
+    }
+
+    updateNowLine();
+    setInterval(updateNowLine, 60_000);
+}
+
+// ================================
+// EXPORTS (se servono)
+// ================================
+
 // Riesporto generateTimeSlots per compatibilità (come nel file originale)
 export { generateTimeSlots };
+
+// ================================
+// MAIN LOGIC (SINGLE ENTRY POINT)
+// ================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -155,7 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const snappedStart = snapToUnit(block.tStart);
             const snappedDuration = snapToUnit(block.duration);
 
-            const relativeStart = snappedStart - CONFIG.RANGE_START_MINUTES;
+            const relativeStart = snappedStart - RANGE_START_MINUTES
+                ;
             if (relativeStart < 0) return;
 
             const top = minutesToPixels(relativeStart);
@@ -354,9 +453,12 @@ document.addEventListener('DOMContentLoaded', () => {
         TimelineRepository.save(blocks);
     }
 
-    // INIT
+    // ----------------
+    // INIT (SPOSTATO E UNIFICATO QUI)
+    // ----------------
     renderTimeAxis();
-    renderBlocks();
+    setupNowLine(); // [FIX] Spostato qui per scope e ordine corretto
+    renderBlocks(); // [FIX] Ora è definito e sicuro da chiamare
 
     // ----------------
     // Ghost Logic
@@ -398,10 +500,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function getCollisionLimits(activeId) {
         const activeBlock = blocks.find(b => b.id === activeId);
 
-        let minStart = CONFIG.RANGE_START_MINUTES;
+        let minStart = RANGE_START_MINUTES
+            ;
         const timelineMinutes =
             (canvas.scrollHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
-        let maxEnd = CONFIG.RANGE_START_MINUTES + timelineMinutes;
+        let maxEnd = RANGE_START_MINUTES
+            + timelineMinutes;
 
         if (!activeBlock) return { minStart, maxEnd };
 
@@ -496,7 +600,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let snappedHeight = Math.round(newHeightRaw / CONFIG.SLOT_HEIGHT) * CONFIG.SLOT_HEIGHT;
 
             const currentStart =
-                CONFIG.RANGE_START_MINUTES +
+                RANGE_START_MINUTES
+                +
                 (initialBlockTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
             const futureDuration =
@@ -520,7 +625,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const duration = activeBlock ? activeBlock.duration : CONFIG.DEFAULT_DURATION;
 
             const futureStart =
-                CONFIG.RANGE_START_MINUTES +
+                RANGE_START_MINUTES
+                +
                 (snappedTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
             const minAllowedStart = limits.minStart;
@@ -530,7 +636,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 clamp(futureStart, minAllowedStart, maxAllowedStart);
 
             activeElement.style.top =
-                `${minutesToPixels(clampedStart - CONFIG.RANGE_START_MINUTES)}px`;
+                `${minutesToPixels(clampedStart - RANGE_START_MINUTES
+                )}px`;
         }
     }
 
@@ -600,13 +707,16 @@ document.addEventListener('DOMContentLoaded', () => {
         activeBlockId = null;
         const minutesFromStart = (currentGhostY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
-        let tStart = CONFIG.RANGE_START_MINUTES + minutesFromStart;
+        let tStart = RANGE_START_MINUTES
+            + minutesFromStart;
         let tDuration = snapToUnit(CONFIG.DEFAULT_DURATION);
 
         // Smart Placement
-        let limitStart = CONFIG.RANGE_START_MINUTES;
+        let limitStart = RANGE_START_MINUTES
+            ;
         const totalMinutes = (canvas.scrollHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
-        let limitEnd = CONFIG.RANGE_START_MINUTES + totalMinutes;
+        let limitEnd = RANGE_START_MINUTES
+            + totalMinutes;
 
         for (const b of blocks) {
             const bEnd = b.tStart + b.duration;
@@ -682,7 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const finalHeight = parseFloat(activeElement.style.height);
 
                 // Check se è cambiato qualcosa per evitare save inutili
-                const newStart = CONFIG.RANGE_START_MINUTES + (finalTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+                const newStart = RANGE_START_MINUTES
+                    + (finalTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
                 const newDuration = (finalHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
                 if (blocks[index].tStart !== newStart || blocks[index].duration !== newDuration) {

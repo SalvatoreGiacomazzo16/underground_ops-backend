@@ -67,26 +67,33 @@ export function renderStaffRow(block) {
 }
 
 export function generateTimeSlots({
-    startHour = 12,
-    endHour = 6,
+    rangeStartMinutes,
+    rangeTotalMinutes,
     unitMinutes = 15
-} = {}) {
+}) {
     const slots = [];
-    const rangeStartMinutes = startHour * 60;
-    const rangeEndMinutes = (endHour <= startHour ? 24 + endHour : endHour) * 60;
-    const totalDuration = rangeEndMinutes - rangeStartMinutes;
-    const slotsCount = totalDuration / unitMinutes;
+    const slotsCount = rangeTotalMinutes / unitMinutes;
 
-    for (let i = 0; i < slotsCount; i++) {
+    for (let i = 0; i <= slotsCount; i++) {
         const absoluteMinutes = rangeStartMinutes + i * unitMinutes;
-        const isHour = absoluteMinutes % 60 === 0;
-        const displayHour = Math.floor(absoluteMinutes / 60) % 24;
+
+        const isHour = (i * unitMinutes) % 60 === 0;
+
+
+        // 🔑 NORMALIZZAZIONE ORA (questa mancava)
+        const hour = Math.floor(
+            ((absoluteMinutes % (24 * 60)) + (24 * 60)) % (24 * 60) / 60
+        );
 
         slots.push({
             index: i,
             isHour,
-            displayHour: isHour ? String(displayHour).padStart(2, '0') : null
+            displayHour: isHour
+                ? String(hour).padStart(2, '0')
+                : null
         });
     }
+
     return slots;
 }
+

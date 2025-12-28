@@ -10,6 +10,8 @@ export const CTX = window.UO_CONTEXT || {
     eventId: 'demo_event_01'
 };
 
+
+
 export const CONFIG = {
     UNIT_MINUTES: 15,
     SLOT_HEIGHT: 20,

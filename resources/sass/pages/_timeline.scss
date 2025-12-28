@@ -7,6 +7,7 @@
     flex-direction: column;
     flex: 1;
     min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .uo-timeline-header {
@@ -106,47 +107,66 @@
     background: #000; // 🔥 copre tutto, niente buchi
 }
 
-// Colonna asse Y
+/* ============================
+   TIMELINE AXIS (Y)
+============================ */
+/* ============================
+   TIMELINE AXIS — LINEE REALI
+============================ */
+
+/* ============================
+   TIMELINE AXIS — NO OVERFLOW
+============================ */
+
+/* ============================
+   TIMELINE AXIS — DEFINITIVO
+============================ */
+
 .uo-timeline-axis {
     position: relative;
-    background-color: #000;
-
-    /* 🔥 lineette ogni 15 min (20px) */
-    background-image:
-        linear-gradient(to bottom,
-            rgba(255, 255, 255, 0.08) 1px,
-            transparent 1px);
-
-    background-size: 100% 20px; // 🔑 MATCH SLOT_HEIGHT
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    width: 80px;
+    background: #000;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.uo-timeline-axis::before {
-    content: '';
-    position: absolute;
-    inset: 0;
+/* Slot 15 minuti */
+.uo-timeline-axis-slot {
+    position: relative;
+    height: 20px; // 15 min REALI
+    box-sizing: border-box;
     pointer-events: none;
 
-    /* 🔥 linea ora piena ogni 4 slot */
-    background-image:
-        linear-gradient(to bottom,
+    /* 🔑 linea DISegnata, non fisica */
+    background-image: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.06) 1px,
+            transparent 1px);
+    background-size: 100% 20px;
+}
+
+/* Slot ORA (ogni 4 slot) */
+.uo-timeline-axis-slot.is-hour {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    padding-top: 2px;
+    padding-right: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+
+    /* linea ORA più forte */
+    background-image: linear-gradient(to bottom,
             rgba(255, 255, 255, 0.18) 1px,
             transparent 1px);
-
-    background-size: 100% 80px; // 4 × 20px = 1 ora
 }
 
 
-// Slot asse (ok così)
-.uo-timeline-axis-slot {
-    height: 20px;
-    line-height: 20px;
-    box-sizing: border-box;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 16px;
-    padding-right: 8px;
-    display: flex;
-}
 
 // Canvas blocchi
 .uo-timeline-canvas {
@@ -164,7 +184,7 @@
     position: absolute;
     left: 20px;
     right: 20px;
-
+    box-sizing: border-box;
     // Layout interno Flexbox per centrare il contenuto
     display: flex;
     flex-direction: column;
@@ -443,4 +463,20 @@
             color: #fff;
         }
     }
+}
+
+.uo-timeline-now {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+
+    background: linear-gradient(90deg,
+            rgba(255, 0, 120, 0),
+            rgba(255, 0, 120, 1),
+            rgba(255, 0, 120, 0));
+
+    box-shadow: 0 0 12px rgba(255, 0, 120, 0.8);
+    z-index: 5;
+    pointer-events: none;
 }
