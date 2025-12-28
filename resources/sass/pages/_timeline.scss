@@ -10,17 +10,77 @@
 }
 
 .uo-timeline-header {
+    position: relative;
+    z-index: 5;
+
+    background: rgba(10, 10, 20, 0.85);
     backdrop-filter: blur(10px);
-    background: #0a0a14;
+
     padding: 16px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-    .uo-timeline-header {
-        position: relative; // 🔑 ANCORA MANCANTE
-        overflow: hidden; // 🔒 CLIP del blur
+/* 🔑 Stack verticale reale */
+.uo-timeline-header__stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Titolo */
+.uo-timeline-header__main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+/* Data + stato */
+.uo-timeline-header__date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+/* Location */
+.uo-timeline-header__sub {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    font-size: 0.8rem;
+}
+
+
+.uo-meta-status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    &.is-past {
+        background: rgba(255, 80, 80, 0.15);
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 80, 80, 0.35);
     }
 
+    &.is-future {
+        background: rgba(120, 210, 255, 0.15);
+        color: #78d2ff;
+        border: 1px solid rgba(120, 210, 255, 0.35);
+    }
+
+    &.is-today {
+        background: rgba(57, 255, 20, 0.15);
+        color: #39ff14;
+        border: 1px solid rgba(57, 255, 20, 0.4);
+    }
 }
+
+
 
 .uo-timeline-title {
     margin: 0;
@@ -128,12 +188,12 @@
     transition: box-shadow 0.15s ease, transform 0.1s ease, border-color 0.1s ease, z-index 0s;
 
     &:hover {
-        z-index: 10;
+        z-index: $z-tl-block;
     }
 
     // Stato Attivo (Selezionato o in Dragging)
     &.is-active {
-        z-index: 50;
+        z-index: $z-tl-block;
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
         border-color: #fff;
         cursor: grabbing;
@@ -324,7 +384,7 @@
     align-items: center;
     gap: 4px;
 
-    z-index: 20;
+    z-index: $z-tl-block;
     /* Più alto del contenuto */
 
     opacity: 0;

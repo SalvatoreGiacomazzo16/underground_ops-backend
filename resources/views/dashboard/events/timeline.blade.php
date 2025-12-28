@@ -1,8 +1,48 @@
 @extends('layouts.admin')
 
-
-
 @section('content')
+@php
+    $eventDate = null;
+    $statusLabel = null;
+    $statusClass = null;
+
+    if ($event->start_datetime) {
+        $eventDate = \Carbon\Carbon::parse($event->start_datetime)->startOfDay();
+        $today = now()->startOfDay();
+
+        $diffDays = $today->diffInDays($eventDate, false);
+
+        if ($diffDays === 0) {
+            $statusLabel = 'Oggi';
+            $statusClass = 'is-today';
+        } elseif ($diffDays > 0) {
+            $months = intdiv($diffDays, 30);
+            $days = $diffDays % 30;
+
+            if ($months > 0) {
+                $monthLabel = $months === 1 ? 'mese' : 'mesi';
+                $dayLabel   = $days === 1 ? 'giorno' : 'giorni';
+
+                $statusLabel = "tra {$months} {$monthLabel}";
+                if ($days > 0) {
+                    $statusLabel .= " e {$days} {$dayLabel}";
+                }
+            } else {
+                $dayLabel = $diffDays === 1 ? 'giorno' : 'giorni';
+                $statusLabel = "tra {$diffDays} {$dayLabel}";
+            }
+
+            $statusClass = 'is-future';
+        } else {
+            $pastDays = abs($diffDays);
+            $dayLabel = $pastDays === 1 ? 'giorno' : 'giorni';
+            $statusLabel = "terminato {$pastDays} {$dayLabel} fa";
+            $statusClass = 'is-past';
+        }
+    }
+@endphp
+
+
 <div class="uo-timeline">
 <script>
     window.UO_CONTEXT = {
@@ -12,26 +52,42 @@
 </script>
 
 
-   {{-- HEADER TIMELINE — EVENT CONTEXT --}}
+ {{-- HEADER TIMELINE — EVENT CONTEXT --}}
 <div class="uo-timeline-header">
 
-    <div class="uo-timeline-header__main">
-        <span class="uo-meta-label">Evento</span>
-        <strong class="uo-meta-value">
-            {{ $event->title }}
-        </strong>
-    </div>
+    <div class="uo-timeline-header__stack">
 
-    @if($event->location)
-        <div class="uo-timeline-header__sub">
-            <span class="uo-meta-separator">•</span>
-            <span class="uo-meta-value">
-                {{ $event->location->name }}
-            </span>
+        <div class="uo-timeline-header__main">
+            <span class="uo-meta-label">Evento</span>
+            <strong class="uo-meta-value">
+                {{ $event->title }}
+            </strong>
         </div>
-    @endif
 
+        @if($event->start_datetime)
+            <div class="uo-timeline-header__date">
+                <span class="uo-meta-date">
+                    📅 {{ $eventDate->translatedFormat('l d F Y') }}
+                </span>
+
+                <span class="uo-meta-status {{ $statusClass }}">
+                    {{ $statusLabel }}
+                </span>
+            </div>
+        @endif
+
+        @if($event->location)
+            <div class="uo-timeline-header__sub">
+                <span class="uo-meta-separator">•</span>
+                <span class="uo-meta-value">
+                    {{ $event->location->name }}
+                </span>
+            </div>
+        @endif
+
+    </div>
 </div>
+
 
 
 

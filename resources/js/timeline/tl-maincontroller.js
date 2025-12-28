@@ -95,24 +95,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const menu = document.createElement('div');
         menu.className = 'uo-context-menu';
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
+
+        const OFFSET = 6;
+
+        // 🔑 coordinate di PAGINA
+        menu.style.left = `${x + OFFSET}px`;
+        menu.style.top = `${y + OFFSET}px`;
 
         NEON_PALETTE.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'uo-color-swatch';
             swatch.style.backgroundColor = color;
+
             swatch.onpointerdown = (e) => {
                 e.stopPropagation();
                 updateBlockColor(blockId, color);
                 closeContextMenu();
             };
+
             menu.appendChild(swatch);
         });
 
         document.body.appendChild(menu);
         contextMenuEl = menu;
     }
+
+
+
 
     function updateBlockColor(blockId, color) {
         const block = blocks.find(b => b.id === blockId);
