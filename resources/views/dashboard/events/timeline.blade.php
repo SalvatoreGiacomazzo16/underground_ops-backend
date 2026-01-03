@@ -90,10 +90,14 @@
 
 
 <script>
-    window.__TIMELINE_EVENT__ = {
-        start: "{{ $event->start_datetime }}"
-    };
+  window.__TIMELINE_EVENT__ = {
+    start: @json(optional($event->start_datetime)->toIso8601String()),
+    end:   @json(optional($event->end_datetime)->toIso8601String()),
+  };
 </script>
+
+
+
 
 
     {{-- BODY --}}
@@ -108,10 +112,10 @@
             {{-- GHOST: Linea guida per lo snap --}}
             <div class="uo-timeline-ghost"></div>
 
-            <div class="uo-timeline-now"></div>
-
-
             {{-- I blocchi (.uo-timeline-block) verranno iniettati qui dal JS --}}
+{{-- Range visivo inizio - fine evento --}}
+            <div class="uo-event-range" aria-hidden="true"></div>
+
         </div>
     </div>
 

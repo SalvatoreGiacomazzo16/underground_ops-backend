@@ -1,14 +1,42 @@
 // =========================================
 // TIMELINE OPS — CORE LAYOUT
 // =========================================
+#admin-layout-wrapper {
+    height: 100vh; // full viewport height
+    overflow: hidden; // no page scroll here
+    display: flex;
+}
+
+#admin-layout-wrapper>.flex-grow-1 {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+main.admin-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0; // remove .p-1 so height is exact
+}
 
 .uo-timeline {
     display: flex;
     flex-direction: column;
     flex: 1;
-    min-height: 100vh;
-    box-sizing: border-box;
+    min-height: 0;
 }
+
+.uo-timeline-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto; // scrolling only here
+}
+
 
 .uo-timeline-header {
     position: relative;
@@ -105,18 +133,12 @@
     position: relative;
     min-height: 0;
     background: #000; // 🔥 copre tutto, niente buchi
+    flex: 1;
+    min-height: 0; // 🔥 senza questo, taglia le ore
+    overflow-y: auto; // ✅ scroll voluto
+    overflow-x: hidden;
+
 }
-
-/* ============================
-   TIMELINE AXIS (Y)
-============================ */
-/* ============================
-   TIMELINE AXIS — LINEE REALI
-============================ */
-
-/* ============================
-   TIMELINE AXIS — NO OVERFLOW
-============================ */
 
 /* ============================
    TIMELINE AXIS — DEFINITIVO
@@ -127,22 +149,22 @@
     width: 80px;
     background: #000;
     border-right: 1px solid rgba(255, 255, 255, 0.08);
-    height: 100%;
-    overflow: hidden;
+
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
 }
+
 
 /* Slot 15 minuti */
 .uo-timeline-axis-slot {
     position: relative;
-    height: 20px; // 15 min REALI
+    height: 20px;
     box-sizing: border-box;
     pointer-events: none;
 
-    /* 🔑 linea DISegnata, non fisica */
     background-image: linear-gradient(to bottom,
-            rgba(255, 255, 255, 0.06) 1px,
+            rgba(255, 255, 255, 0.10) 1px,
             transparent 1px);
     background-size: 100% 20px;
 }
@@ -150,30 +172,70 @@
 /* Slot ORA (ogni 4 slot) */
 .uo-timeline-axis-slot.is-hour {
     display: flex;
+    align-items: center;
+    /* testo centrato verticalmente */
     justify-content: flex-end;
-    align-items: flex-start;
-
-    padding-top: 2px;
-    padding-right: 8px;
-
+    line-height: 20px;
+    /* uguale all’altezza della cella */
+    padding: 0 8px;
     font-size: 14px;
     font-weight: 600;
     color: #fff;
 
-    /* linea ORA più forte */
     background-image: linear-gradient(to bottom,
-            rgba(255, 255, 255, 0.18) 1px,
+            rgba(180, 120, 255, 0.55) 1px,
             transparent 1px);
 }
 
-
+/* slot extra alla fine, senza linee né numero */
+.uo-timeline-axis-slot.is-padding {
+    height: 20px;
+    background: none;
+}
 
 // Canvas blocchi
 .uo-timeline-canvas {
     position: relative;
     background-color: #000;
 
-    background-size: 100% 20px; // 🔑 MATCH SLOT_HEIGHT
+    /* ⬇️ compenso esatto del padding axis */
+
+    .uo-timeline-axis {
+        position: relative;
+        width: 80px;
+        background: #000;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+
+
+    /* Slot 15 minuti */
+    .uo-timeline-axis-slot {
+        position: relative;
+        height: 20px;
+        box-sizing: border-box;
+        pointer-events: none;
+
+        background-image: linear-gradient(to bottom,
+                rgba(255, 255, 255, 0.10) 1px,
+                transparent 1px);
+        background-size: 100% 20px;
+    }
+
+
+    // Canvas blocchi
+    .uo-timeline-canvas {
+        position: relative;
+        background-color: #000;
+
+        box-sizing: border-box;
+    }
+
+    box-sizing: border-box;
 }
 
 
@@ -465,18 +527,47 @@
     }
 }
 
-.uo-timeline-now {
+/* ============================
+   EVENT RANGE (HIGHLIGHT)
+============================ */
+
+.uo-event-range {
+    position: absolute;
+    left: 0;
+    right: 0;
+
+    background: linear-gradient(180deg,
+            rgba(0, 255, 200, 0.18),
+            rgba(0, 255, 200, 0.08));
+
+    border-top: 1px solid rgba(0, 255, 200, 0.5);
+    border-bottom: 1px solid rgba(0, 255, 200, 0.5);
+
+    z-index: 1; // sotto i blocchi, sopra il grid
+    pointer-events: none;
+}
+
+
+
+.uo-timeline-marker {
     position: absolute;
     left: 0;
     right: 0;
     height: 2px;
-
-    background: linear-gradient(90deg,
-            rgba(255, 0, 120, 0),
-            rgba(255, 0, 120, 1),
-            rgba(255, 0, 120, 0));
-
-    box-shadow: 0 0 12px rgba(255, 0, 120, 0.8);
-    z-index: 5;
+    z-index: 6;
     pointer-events: none;
+}
+
+
+.uo-mobile-signature {
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+
+@media (max-width: 768px) {
+    .uo-mobile-signature {
+        display: inline-flex;
+    }
 }

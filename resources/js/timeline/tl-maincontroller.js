@@ -17,32 +17,82 @@ import {
 
 import { TimelineRepository } from './tl-storage.js';
 import { injectStyles } from './tl-style.js';
-import { renderStaffRow, generateTimeSlots } from './tl-ui-comp.js';
+import { renderStaffRow, generateTimeSlots, renderEventRange } from './tl-ui-comp.js';
+
 
 // ================================
-// TIMELINE — EVENT CONTEXT & RANGE
+// TIMELINE CONSTANTS
 // ================================
 
-// Evento iniettato dal backend
-const EVENT_START = window.__TIMELINE_EVENT__?.start
-    ? new Date(window.__TIMELINE_EVENT__.start)
-    : null;
+const PX_PER_MINUTE = CONFIG.SLOT_HEIGHT / CONFIG.UNIT_MINUTES;
+
+// RAW (come arriva dal backend)
+const RAW_EVENT = window.__TIMELINE_EVENT__ ?? {};
+const EVENT_START_STR = RAW_EVENT.start ?? null;
+const EVENT_END_STR = RAW_EVENT.end ?? null;
+
+// Se ti serve ancora come Date per altro (non per i minuti!)
+const EVENT_START = EVENT_START_STR ? new Date(EVENT_START_STR) : null;
+const EVENT_END = EVENT_END_STR ? new Date(EVENT_END_STR) : null;
+
+// --- minuti "wall-clock" (HH:MM) SENZA timezone conversion ---
+function wallClockMinutes(datetimeStr) {
+    if (!datetimeStr) return null;
+
+    // supporta: "2026-01-03T22:27:00+01:00" e "2026-01-03 22:27:00"
+    const m = datetimeStr.match(/T(\d{2}):(\d{2})/) || datetimeStr.match(/ (\d{2}):(\d{2})/);
+    if (!m) return null;
+
+    const hh = Number(m[1]);
+    const mm = Number(m[2]);
+    return (hh * 60) + mm; // 0..1439
+}
 
 // PRODUCT DECISION
 const TIMELINE_BEFORE_HOURS = 4;
 const TIMELINE_AFTER_HOURS = 8;
 
-// Fallback sicuro
-const EVENT_START_MINUTES = EVENT_START
-    ? EVENT_START.getHours() * 60 + EVENT_START.getMinutes()
-    : 22 * 60;
+// minuti reali
+const EVENT_START_MINUTES_REAL = wallClockMinutes(EVENT_START_STR);
+const EVENT_END_MINUTES_REAL = wallClockMinutes(EVENT_END_STR);
 
-// Range timeline
-const RANGE_START_MINUTES =
-    EVENT_START_MINUTES - TIMELINE_BEFORE_HOURS * 60;
+// fallback robusti
+const SAFE_EVENT_START = (EVENT_START_MINUTES_REAL ?? (22 * 60));
+let SAFE_EVENT_END = (EVENT_END_MINUTES_REAL ?? (SAFE_EVENT_START + 180));
 
-const RANGE_TOTAL_MINUTES =
-    (TIMELINE_BEFORE_HOURS + TIMELINE_AFTER_HOURS) * 60;
+// overnight fix (fine dopo mezzanotte)
+if (SAFE_EVENT_END < SAFE_EVENT_START) {
+    SAFE_EVENT_END += 24 * 60;
+}
+
+// range timeline
+const RANGE_START_MINUTES = SAFE_EVENT_START - (TIMELINE_BEFORE_HOURS * 60);
+const RANGE_END_MINUTES = SAFE_EVENT_END + (TIMELINE_AFTER_HOURS * 60);
+const RANGE_TOTAL_MINUTES = RANGE_END_MINUTES - RANGE_START_MINUTES;
+
+console.log('RAW EVENT', RAW_EVENT);
+console.log({
+    EVENT_START_MINUTES_REAL,
+    EVENT_END_MINUTES_REAL,
+    SAFE_EVENT_START,
+    SAFE_EVENT_END,
+    RANGE_START_MINUTES,
+    RANGE_END_MINUTES,
+    RANGE_TOTAL_MINUTES
+});
+
+
+
+
+function getTimelineTopOffset() {
+    const firstSlot = document.querySelector('.uo-timeline-axis-slot');
+    if (!firstSlot) return 0;
+
+    const body = document.querySelector('.uo-timeline-body');
+    if (!body) return 0;
+
+    return firstSlot.offsetTop;
+}
 
 
 // ================================
@@ -82,47 +132,6 @@ function renderTimeAxis() {
 
         axis.appendChild(el);
     });
-}
-
-
-// ================================
-// NOW LINE
-// ================================
-
-function setupNowLine() {
-    const nowLine = document.querySelector('.uo-timeline-now');
-    if (!nowLine || !EVENT_START) return;
-
-    function updateNowLine() {
-        const now = new Date();
-
-        if (now.toDateString() !== EVENT_START.toDateString()) {
-            nowLine.style.display = 'none';
-            return;
-        }
-
-        const nowMinutes =
-            now.getHours() * 60 + now.getMinutes();
-
-        const minutesFromStart =
-            nowMinutes - RANGE_START_MINUTES;
-
-        if (
-            minutesFromStart < 0 ||
-            minutesFromStart > RANGE_TOTAL_MINUTES
-        ) {
-            nowLine.style.display = 'none';
-            return;
-        }
-
-        nowLine.style.top =
-            `${minutesToPixels(minutesFromStart)}px`;
-
-        nowLine.style.display = 'block';
-    }
-
-    updateNowLine();
-    setInterval(updateNowLine, 60_000);
 }
 
 // ================================
@@ -269,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             el.style.top = `${top}px`;
+
             el.style.height = `${height}px`;
             el.style.backgroundColor = block.color;
 
@@ -453,12 +463,33 @@ document.addEventListener('DOMContentLoaded', () => {
         TimelineRepository.save(blocks);
     }
 
-    // ----------------
-    // INIT (SPOSTATO E UNIFICATO QUI)
-    // ----------------
+
+    const pxPerMinute = CONFIG.SLOT_HEIGHT / CONFIG.UNIT_MINUTES;
+
+    // minuti assoluti evento
+    const startAbs = EVENT_START
+        ? EVENT_START.getHours() * 60 + EVENT_START.getMinutes()
+        : null;
+
+    let endAbs = EVENT_END
+        ? EVENT_END.getHours() * 60 + EVENT_END.getMinutes()
+        : null;
+
+    // 🔥 fix overnight
+    if (startAbs != null && endAbs != null && endAbs < startAbs) {
+        endAbs += 1440;
+    }
+
     renderTimeAxis();
-    setupNowLine(); // [FIX] Spostato qui per scope e ordine corretto
-    renderBlocks(); // [FIX] Ora è definito e sicuro da chiamare
+    renderEventRange({
+        canvas,
+        eventStartMinutes: SAFE_EVENT_START,
+        eventEndMinutes: SAFE_EVENT_END,
+        rangeStartMinutes: RANGE_START_MINUTES,
+        pxPerMinute: PX_PER_MINUTE,
+    });
+    renderBlocks();
+
 
     // ----------------
     // Ghost Logic

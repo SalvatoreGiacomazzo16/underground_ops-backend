@@ -13,6 +13,7 @@ export function minutesToPixels(minutes) {
     return (minutes / CONFIG.UNIT_MINUTES) * CONFIG.SLOT_HEIGHT;
 }
 
+
 export function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
@@ -26,3 +27,6 @@ export function getCanvasRelativeY(clientY, canvasElement) {
     const rect = canvasElement.getBoundingClientRect();
     return clientY - rect.top;
 }
+
+
+
