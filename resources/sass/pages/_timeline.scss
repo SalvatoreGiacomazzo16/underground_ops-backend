@@ -527,8 +527,15 @@ main.admin-content {
     }
 }
 
+
+
 /* ============================
-   EVENT RANGE (HIGHLIGHT)
+   EVENT RANGE — SLOT BASED
+   Background semantico evento
+============================ */
+/* ============================
+   EVENT RANGE — SLOT BASED
+   Enterprise / Production
 ============================ */
 
 .uo-event-range {
@@ -536,16 +543,78 @@ main.admin-content {
     left: 0;
     right: 0;
 
-    background: linear-gradient(180deg,
-            rgba(0, 255, 200, 0.18),
-            rgba(0, 255, 200, 0.08));
+    pointer-events: auto;
+    z-index: 2; // sotto i blocchi, sopra il canvas
 
-    border-top: 1px solid rgba(0, 255, 200, 0.5);
-    border-bottom: 1px solid rgba(0, 255, 200, 0.5);
+    /* ===== Tooltip ===== */
+    &::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: -34px;
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
 
-    z-index: 1; // sotto i blocchi, sopra il grid
-    pointer-events: none;
+        padding: 6px 10px;
+        background: rgba(10, 0, 20, 0.92);
+        border: 1px solid rgba(201, 22, 154, 0.55);
+        border-radius: 6px;
+
+        color: #fff;
+        font-size: 12px;
+        white-space: nowrap;
+
+        opacity: 0;
+        pointer-events: none;
+
+        box-shadow:
+            0 0 14px rgba(201, 22, 154, 0.35),
+            inset 0 0 0 1px rgba(201, 22, 154, 0.15);
+
+        transition:
+            opacity 0.15s ease,
+            transform 0.15s ease;
+    }
+
+    &:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px);
+    }
 }
+
+
+/* ============================
+   RANGE VISIVO — SLOT
+============================ */
+
+.uo-event-range--slots {
+    background:
+        linear-gradient(180deg,
+            rgba(201, 22, 154, 0.30),
+            rgba(201, 22, 154, 0.12));
+
+    box-shadow:
+        inset 0 0 0 1px rgba(201, 22, 154, 0.35),
+        inset 0 0 40px rgba(201, 22, 154, 0.35);
+
+    mix-blend-mode: screen; // 🔥 visibile su nero puro
+    opacity: 0.9;
+
+    transition:
+        opacity 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* ===== Hover enhancement ===== */
+
+.uo-event-range--slots:hover {
+    opacity: 1;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(201, 22, 154, 0.55),
+        inset 0 0 60px rgba(201, 22, 154, 0.45);
+}
+
 
 
 
@@ -555,6 +624,7 @@ main.admin-content {
     right: 0;
     height: 2px;
     z-index: 6;
+
     pointer-events: none;
 }
 

@@ -3,8 +3,6 @@
 // Generatori di HTML e Logica di Template
 // ================================
 
-import { minutesToPixels } from './tl-utils.js';
-
 // ================================
 // STAFF RENDERING
 // ================================
@@ -74,20 +72,18 @@ export function renderStaffRow(block) {
 // ================================
 
 export function generateTimeSlots({
-    rangeStartMinutes,
-    rangeTotalMinutes,
+    axisStartSlot,
+    totalSlots,
     unitMinutes = 15
 }) {
     const slots = [];
-    const slotsCount = rangeTotalMinutes / unitMinutes;
 
-    for (let i = 0; i <= slotsCount; i++) {
-        const absoluteMinutes = rangeStartMinutes + i * unitMinutes;
-        const isHour = (i * unitMinutes) % 60 === 0;
+    for (let i = 0; i <= totalSlots; i++) {
+        const absoluteMinutes = (axisStartSlot + i) * unitMinutes;
+        const isHour = (absoluteMinutes % 60) === 0;
 
-        // normalizzazione ora 0–23
         const hour = Math.floor(
-            ((absoluteMinutes % (24 * 60)) + (24 * 60)) % (24 * 60) / 60
+            ((absoluteMinutes % 1440) + 1440) % 1440 / 60
         );
 
         slots.push({
@@ -109,7 +105,7 @@ export function generateTimeSlots({
 // EVENT RANGE (HIGHLIGHT)
 // ================================
 
-export function renderEventRange({
+export function renderEventRangeLegacy({
     canvas,
     eventStartMinutes,
     eventEndMinutes,
@@ -141,3 +137,98 @@ export function renderEventRange({
     range.style.top = `${startOffset * pxPerMinute}px`;
     range.style.height = `${duration * pxPerMinute}px`;
 }
+
+export function renderEventRangeFromAxis({
+    canvas,
+    slots,
+    eventStartMinutes,
+    eventEndMinutes,
+    unitMinutes,      // CONFIG.UNIT_MINUTES
+    slotHeight,       // CONFIG.SLOT_HEIGHT
+}) {
+    if (!canvas || !Array.isArray(slots) || slots.length === 0) return;
+    if (eventStartMinutes == null) return;
+
+    // crea/riprende il layer
+    let range = canvas.querySelector('.uo-event-range-axis');
+    if (!range) {
+        range = document.createElement('div');
+        range.className = 'uo-event-range uo-event-range-axis';
+        range.setAttribute('aria-hidden', 'true');
+        canvas.appendChild(range);
+    }
+
+    // helper: normalizza overnight rispetto allo start
+    const normalize = (m) => {
+        let mm = m;
+        if (eventStartMinutes != null && mm != null && mm < eventStartMinutes) mm += 1440;
+        return mm;
+    };
+
+    const startAbs = normalize(eventStartMinutes);
+    const endAbs = normalize(eventEndMinutes ?? (eventStartMinutes + 180));
+
+    // snap COERENTE con axis (15min): usa lo stesso unitMinutes
+    const snapDown = (m) => Math.floor(m / unitMinutes) * unitMinutes;
+    const snapUp = (m) => Math.ceil(m / unitMinutes) * unitMinutes;
+
+    const startSnap = snapDown(startAbs);
+    const endSnap = snapUp(endAbs);
+
+    // trova l’indice slot più vicino (in pratica: mappa minuti→slot)
+    const startIndex = Math.round((startSnap - slots[0].absoluteMinutes) / unitMinutes);
+    const endIndex = Math.round((endSnap - slots[0].absoluteMinutes) / unitMinutes);
+
+    // clamp nel range di slot
+    const si = Math.max(0, Math.min(slots.length - 1, startIndex));
+    const ei = Math.max(0, Math.min(slots.length - 1, endIndex));
+
+    const topPx = si * slotHeight;
+    const heightPx = Math.max(slotHeight, (ei - si) * slotHeight);
+
+    range.style.top = `${topPx}px`;
+    range.style.height = `${heightPx}px`;
+}
+
+function minutesToHHMM(totalMinutes) {
+    const minutes = ((totalMinutes % 1440) + 1440) % 1440;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+export function renderEventRangeFromSlots({ canvas, slotHeight }) {
+    const cfg = window.__TIMELINE_CONFIG__;
+    if (!cfg?.time_real) return;
+
+    let el = canvas.querySelector(".uo-event-range");
+    if (!el) {
+        el = document.createElement("div");
+        el.className = "uo-event-range uo-event-range--slots";
+        canvas.appendChild(el);
+    }
+
+    const unit = cfg.unit_minutes ?? 15;
+    const axisStartMinutes = cfg.axis_start_minutes ?? (cfg.axis_start_slot * unit);
+
+    // minuti reali (end può essere >1440 se overnight)
+    const startMin = cfg.time_real.start_minutes;
+    const endMin = cfg.time_real.end_minutes;
+
+    // offset minuti dall’inizio axis
+    const relStart = startMin - axisStartMinutes;
+    const relEnd = endMin - axisStartMinutes;
+
+    // px per minuto
+    const pxPerMinute = slotHeight / unit;
+
+    const top = relStart * pxPerMinute;
+    const height = (relEnd - relStart) * pxPerMinute;
+
+    el.style.top = `${top}px`;
+    el.style.height = `${height}px`;
+
+    el.dataset.tooltip = `${minutesToHHMM(startMin)} → ${minutesToHHMM(endMin)}`;
+}
+
+

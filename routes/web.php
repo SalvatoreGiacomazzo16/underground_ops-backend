@@ -4,19 +4,20 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+// ================================
 // CONTROLLER ADMIN
+// ================================
+
 use App\Http\Controllers\Admin\EventController as AdminEventController;
+use App\Http\Controllers\Admin\EventTimelineController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\EventStaffController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\ManagerDashboardController;
-use App\Http\Controllers\Admin\EventTimelineController;
-
-
 
 /*
 |--------------------------------------------------------------------------
-| Auth Routes
+| AUTH ROUTES
 |--------------------------------------------------------------------------
 */
 Auth::routes();
@@ -48,22 +49,32 @@ Route::middleware(['auth'])
             ->name('events.')
             ->group(function () {
 
+                // ============================
                 // LISTE
+                // ============================
                 Route::get('/',        [AdminEventController::class, 'index'])->name('index');
                 Route::get('/table',   [AdminEventController::class, 'table'])->name('table');
 
+                // ============================
                 // CREATE
+                // ============================
                 Route::get('/create',  [AdminEventController::class, 'create'])->name('create');
                 Route::post('/',       [AdminEventController::class, 'store'])->name('store');
 
+                // ============================
                 // EDIT / UPDATE
+                // ============================
                 Route::get('/{event}/edit', [AdminEventController::class, 'edit'])->name('edit');
                 Route::put('/{event}',      [AdminEventController::class, 'update'])->name('update');
 
+                // ============================
                 // DELETE
+                // ============================
                 Route::delete('/{event}',   [AdminEventController::class, 'destroy'])->name('destroy');
 
-                // 👥 STAFF ASSOCIATO ALL’EVENTO
+                // ============================
+                // STAFF ASSOCIATO ALL’EVENTO
+                // ============================
                 Route::get('/{event}/staff', [EventStaffController::class, 'edit'])
                     ->name('staff.edit');
 
@@ -75,7 +86,8 @@ Route::middleware(['auth'])
                 | TIMELINE EVENTO (CUORE OPERATIVO)
                 |--------------------------------------------------------------------------
                 |
-                | La timeline NON esiste senza evento
+                | Questa route È l’unica che deve renderizzare:
+                | resources/views/dashboard/events/timeline.blade.php
                 |
                 */
                 Route::get('/{event}/timeline', [EventTimelineController::class, 'show'])
@@ -86,9 +98,6 @@ Route::middleware(['auth'])
         |--------------------------------------------------------------------------
         | STAFF CRUD
         |--------------------------------------------------------------------------
-        |
-        | Views: resources/views/dashboard/staff/
-        |
         */
         Route::resource('staff', StaffController::class)
             ->except(['show']);
@@ -97,9 +106,6 @@ Route::middleware(['auth'])
         |--------------------------------------------------------------------------
         | LOCATION CRUD
         |--------------------------------------------------------------------------
-        |
-        | Views: resources/views/dashboard/locations/
-        |
         */
         Route::resource('locations', LocationController::class)
             ->except(['show']);

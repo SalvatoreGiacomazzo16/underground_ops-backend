@@ -1,9 +1,5 @@
 // ================================
-// TIMELINE.JS (MAIN CONTROLLER)
-// ================================
-
-// ================================
-// IMPORTS (SEMPRE IN ALTO)
+// TIMELINE.JS (MAIN CONTROLLER) — SLOT-BASED PURO
 // ================================
 
 import { CONFIG, NEON_PALETTE } from './tl-config.js';
@@ -17,103 +13,25 @@ import {
 
 import { TimelineRepository } from './tl-storage.js';
 import { injectStyles } from './tl-style.js';
-import { renderStaffRow, generateTimeSlots, renderEventRange } from './tl-ui-comp.js';
 
-
-// ================================
-// TIMELINE CONSTANTS
-// ================================
-
-const PX_PER_MINUTE = CONFIG.SLOT_HEIGHT / CONFIG.UNIT_MINUTES;
-
-// RAW (come arriva dal backend)
-const RAW_EVENT = window.__TIMELINE_EVENT__ ?? {};
-const EVENT_START_STR = RAW_EVENT.start ?? null;
-const EVENT_END_STR = RAW_EVENT.end ?? null;
-
-// Se ti serve ancora come Date per altro (non per i minuti!)
-const EVENT_START = EVENT_START_STR ? new Date(EVENT_START_STR) : null;
-const EVENT_END = EVENT_END_STR ? new Date(EVENT_END_STR) : null;
-
-// --- minuti "wall-clock" (HH:MM) SENZA timezone conversion ---
-function wallClockMinutes(datetimeStr) {
-    if (!datetimeStr) return null;
-
-    // supporta: "2026-01-03T22:27:00+01:00" e "2026-01-03 22:27:00"
-    const m = datetimeStr.match(/T(\d{2}):(\d{2})/) || datetimeStr.match(/ (\d{2}):(\d{2})/);
-    if (!m) return null;
-
-    const hh = Number(m[1]);
-    const mm = Number(m[2]);
-    return (hh * 60) + mm; // 0..1439
-}
-
-// PRODUCT DECISION
-const TIMELINE_BEFORE_HOURS = 4;
-const TIMELINE_AFTER_HOURS = 8;
-
-// minuti reali
-const EVENT_START_MINUTES_REAL = wallClockMinutes(EVENT_START_STR);
-const EVENT_END_MINUTES_REAL = wallClockMinutes(EVENT_END_STR);
-
-// fallback robusti
-const SAFE_EVENT_START = (EVENT_START_MINUTES_REAL ?? (22 * 60));
-let SAFE_EVENT_END = (EVENT_END_MINUTES_REAL ?? (SAFE_EVENT_START + 180));
-
-// overnight fix (fine dopo mezzanotte)
-if (SAFE_EVENT_END < SAFE_EVENT_START) {
-    SAFE_EVENT_END += 24 * 60;
-}
-
-// range timeline
-const RANGE_START_MINUTES = SAFE_EVENT_START - (TIMELINE_BEFORE_HOURS * 60);
-const RANGE_END_MINUTES = SAFE_EVENT_END + (TIMELINE_AFTER_HOURS * 60);
-const RANGE_TOTAL_MINUTES = RANGE_END_MINUTES - RANGE_START_MINUTES;
-
-console.log('RAW EVENT', RAW_EVENT);
-console.log({
-    EVENT_START_MINUTES_REAL,
-    EVENT_END_MINUTES_REAL,
-    SAFE_EVENT_START,
-    SAFE_EVENT_END,
-    RANGE_START_MINUTES,
-    RANGE_END_MINUTES,
-    RANGE_TOTAL_MINUTES
-});
-
-
-
-
-function getTimelineTopOffset() {
-    const firstSlot = document.querySelector('.uo-timeline-axis-slot');
-    if (!firstSlot) return 0;
-
-    const body = document.querySelector('.uo-timeline-body');
-    if (!body) return 0;
-
-    return firstSlot.offsetTop;
-}
-
+import {
+    renderStaffRow,
+    generateTimeSlots,
+    renderEventRangeFromSlots
+} from './tl-ui-comp.js';
 
 // ================================
-// DOM READY (RIMOSSO DUPLICATO QUI - FIX ORDER)
+// TIME AXIS RENDER (SLOT-BASED)
 // ================================
-// Il blocco DOMContentLoaded duplicato è stato rimosso per evitare ReferenceError
-// su renderBlocks e conflitti di scope. L'inizializzazione è spostata in fondo.
-
-// ================================
-// TIME AXIS
-// ================================
-
-function renderTimeAxis() {
+function renderTimeAxis(cfg) {
     const axis = document.getElementById('timeline-axis');
-    if (!axis) return;
+    if (!axis) return [];
 
     axis.innerHTML = '';
 
     const slots = generateTimeSlots({
-        rangeStartMinutes: RANGE_START_MINUTES,
-        rangeTotalMinutes: RANGE_TOTAL_MINUTES,
+        axisStartSlot: cfg.axis_start_slot,      // assoluto (es: 72)
+        totalSlots: cfg.total_slots,             // 12h -> 48 (se 15m)
         unitMinutes: CONFIG.UNIT_MINUTES
     });
 
@@ -121,32 +39,22 @@ function renderTimeAxis() {
         const el = document.createElement('div');
         el.className = 'uo-timeline-axis-slot';
 
+        // Mostriamo testo solo alle ore (ma lo slot esiste sempre ogni 15m)
         if (slot.isHour) {
             el.classList.add('is-hour');
-
-            el.textContent = `
-    ${slot.displayHour}
-    `;
+            el.textContent = slot.displayHour;
         }
-
 
         axis.appendChild(el);
     });
+
+    return slots;
 }
 
 // ================================
-// EXPORTS (se servono)
+// MAIN (SINGLE ENTRY POINT)
 // ================================
-
-// Riesporto generateTimeSlots per compatibilità (come nel file originale)
-export { generateTimeSlots };
-
-// ================================
-// MAIN LOGIC (SINGLE ENTRY POINT)
-// ================================
-
 document.addEventListener('DOMContentLoaded', () => {
-
     injectStyles();
 
     // ----------------
@@ -162,9 +70,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
+    // Config (backend source of truth)
+    // ----------------
+    const cfg = window.__TIMELINE_CONFIG__;
+    if (!cfg || !cfg.event) {
+        console.warn('Missing window.__TIMELINE_CONFIG__');
+        return;
+    }
+
+    // Altezza timeline: 1 slot = SLOT_HEIGHT
+    // (serve perché canvas abbia area reale e scorribile/cliccabile)
+    canvas.style.position = canvas.style.position || 'relative';
+    canvas.style.minHeight = `${cfg.total_slots * CONFIG.SLOT_HEIGHT}px`;
+
+    // ----------------
+    // Axis + Range
+    // ----------------
+    renderTimeAxis(cfg);
+
+    renderEventRangeFromSlots({
+        canvas,
+        startSlot: cfg.event.start_slot,        // relativo (0..totalSlots)
+        endSlot: cfg.event.end_slot,            // relativo
+        rangeStartSlot: cfg.range_start_slot,   // tipicamente 0
+        slotHeight: CONFIG.SLOT_HEIGHT
+    });
+
+    // ----------------
     // State — Data (INITIAL LOAD)
     // ----------------
     let blocks = TimelineRepository.load();
+
+    // IMPORTANT: se in passato avevi salvato minuti assoluti (tipo 1320),
+    // ora non li vedrai più in una timeline 0..720.
+    // In quel caso, resetta localStorage per l’evento.
 
     // ----------------
     // State — Runtime
@@ -204,8 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         menu.className = 'uo-context-menu';
 
         const OFFSET = 6;
-
-        // 🔑 coordinate di PAGINA
         menu.style.left = `${x + OFFSET}px`;
         menu.style.top = `${y + OFFSET}px`;
 
@@ -227,16 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
         contextMenuEl = menu;
     }
 
-
-
-
     function updateBlockColor(blockId, color) {
         const block = blocks.find(b => b.id === blockId);
-        if (block) {
-            block.color = color;
-            renderBlocks();
-            TimelineRepository.save(blocks);
-        }
+        if (!block) return;
+
+        block.color = color;
+        TimelineRepository.save(blocks);
+        renderBlocks();
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -253,53 +187,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
 
+        const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
+
         blocks.forEach(block => {
-            // sicurezza: staff sempre array
-            if (!Array.isArray(block.staff)) {
-                block.staff = [];
-            }
+            if (!Array.isArray(block.staff)) block.staff = [];
 
             const snappedStart = snapToUnit(block.tStart);
             const snappedDuration = snapToUnit(block.duration);
 
-            const relativeStart = snappedStart - RANGE_START_MINUTES
-                ;
-            if (relativeStart < 0) return;
+            // dentro la timeline (0..12h)
+            if (snappedStart < 0 || snappedStart >= timelineMinutes) return;
 
-            const top = minutesToPixels(relativeStart);
+            const top = minutesToPixels(snappedStart);
             const height = minutesToPixels(snappedDuration);
 
             const el = document.createElement('div');
             el.className = 'uo-timeline-block';
             el.dataset.blockId = block.id;
 
-            if (block.id === activeBlockId) {
-                el.classList.add('is-active');
-            }
+            if (block.id === activeBlockId) el.classList.add('is-active');
 
             el.style.top = `${top}px`;
-
             el.style.height = `${height}px`;
             el.style.backgroundColor = block.color;
 
-            // Uso del componente importato
             const staffHtml = renderStaffRow(block);
 
             el.innerHTML = `
-                <div class="uo-block-actions">
-                    <button class="uo-delete-btn" title="Remove">×</button>
-                </div>
-                <div class="uo-block-content">
-                    <span class="uo-block-label" title="Click to edit">${block.label}</span>
-                    ${staffHtml}
-                    <span class="uo-block-meta">${snappedDuration}m</span>
-                </div>
-                <div class="uo-resizer"></div>
-            `;
+        <div class="uo-block-actions">
+          <button class="uo-delete-btn" title="Remove">×</button>
+        </div>
+        <div class="uo-block-content">
+          <span class="uo-block-label" title="Click to edit">${block.label}</span>
+          ${staffHtml}
+          <span class="uo-block-meta">${snappedDuration}m</span>
+        </div>
+        <div class="uo-resizer"></div>
+      `;
 
-            // ----------------
             // Label edit
-            // ----------------
             const labelEl = el.querySelector('.uo-block-label');
             labelEl.addEventListener('pointerdown', e => e.stopPropagation());
             labelEl.addEventListener('click', e => {
@@ -307,27 +233,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 startInlineEdit(block.id, labelEl);
             });
 
-            // ----------------
             // Delete
-            // ----------------
             const deleteEl = el.querySelector('.uo-delete-btn');
             deleteEl.addEventListener('pointerdown', e => {
                 e.stopPropagation();
                 deleteBlock(block.id);
             });
 
-            // ----------------
             // Context menu (color)
-            // ----------------
             el.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 e.stopPropagation();
                 openColorMenu(e.pageX, e.pageY, block.id);
             });
 
-            // ----------------
-            // Staff add & Inline Edit
-            // ----------------
+            // Staff add
             const addStaffBtn = el.querySelector('[data-add-staff]');
             if (addStaffBtn) {
                 addStaffBtn.addEventListener('pointerdown', e => {
@@ -336,9 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     handleAddStaff(block.id);
                 });
 
-                // ----------------
-                // Staff inline rename (FAST)
-                // ----------------
+                // Quick staff rename
                 el.querySelectorAll('.uo-staff-chip.is-quick').forEach(chipEl => {
                     chipEl.addEventListener('pointerdown', e => {
                         e.preventDefault();
@@ -353,11 +271,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function deleteBlock(blockId) {
+        blocks = blocks.filter(b => b.id !== blockId);
+        activeBlockId = null;
+        TimelineRepository.save(blocks);
+        renderBlocks();
+    }
+
     // ----------------
     // Staff Add Logic
     // ----------------
     function handleAddStaff(blockId) {
-        console.log('FAST STAFF ADD', blockId);
         const block = blocks.find(b => b.id === blockId);
         if (!block) return;
 
@@ -372,9 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBlocks();
     }
 
-    // ----------------
-    // Staff Inline Edit (FAST)
-    // ----------------
     function startStaffInlineEdit(blockId, staffId, chipEl) {
         const block = blocks.find(b => b.id === blockId);
         if (!block) return;
@@ -397,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const save = () => {
             const val = input.value.trim();
             staff.name = val || 'STAFF';
-
             TimelineRepository.save(blocks);
             renderBlocks();
         };
@@ -407,7 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') input.blur();
             e.stopPropagation();
         });
-
         input.addEventListener('pointerdown', e => e.stopPropagation());
     }
 
@@ -436,8 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isEditingText) return;
 
             isEditingText = false;
-            if (input.value.trim()) {
-                block.label = input.value.trim();
+            const val = input.value.trim();
+            if (val) {
+                block.label = val;
                 TimelineRepository.save(blocks);
             }
             renderBlocks();
@@ -452,44 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('pointerdown', e => e.stopPropagation());
         input.addEventListener('click', e => e.stopPropagation());
     }
-
-    // ----------------
-    // Delete Block
-    // ----------------
-    function deleteBlock(blockId) {
-        blocks = blocks.filter(b => b.id !== blockId);
-        activeBlockId = null;
-        renderBlocks();
-        TimelineRepository.save(blocks);
-    }
-
-
-    const pxPerMinute = CONFIG.SLOT_HEIGHT / CONFIG.UNIT_MINUTES;
-
-    // minuti assoluti evento
-    const startAbs = EVENT_START
-        ? EVENT_START.getHours() * 60 + EVENT_START.getMinutes()
-        : null;
-
-    let endAbs = EVENT_END
-        ? EVENT_END.getHours() * 60 + EVENT_END.getMinutes()
-        : null;
-
-    // 🔥 fix overnight
-    if (startAbs != null && endAbs != null && endAbs < startAbs) {
-        endAbs += 1440;
-    }
-
-    renderTimeAxis();
-    renderEventRange({
-        canvas,
-        eventStartMinutes: SAFE_EVENT_START,
-        eventEndMinutes: SAFE_EVENT_END,
-        rangeStartMinutes: RANGE_START_MINUTES,
-        pxPerMinute: PX_PER_MINUTE,
-    });
-    renderBlocks();
-
 
     // ----------------
     // Ghost Logic
@@ -514,29 +396,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ghost.style.opacity = '1';
     }
 
-    // ----------------
     // Scroll sync
-    // ----------------
     if (scroller) {
         scroller.addEventListener('scroll', () => {
-            if (lastClientY !== null) {
-                updateGhostPosition(lastClientY);
-            }
+            if (lastClientY !== null) updateGhostPosition(lastClientY);
         }, { passive: true });
     }
 
     // ----------------
-    // Collision Handling
+    // Collision Handling (timeline normalizzata)
     // ----------------
     function getCollisionLimits(activeId) {
+        const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
+
         const activeBlock = blocks.find(b => b.id === activeId);
 
-        let minStart = RANGE_START_MINUTES
-            ;
-        const timelineMinutes =
-            (canvas.scrollHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
-        let maxEnd = RANGE_START_MINUTES
-            + timelineMinutes;
+        let minStart = 0;
+        let maxEnd = timelineMinutes;
 
         if (!activeBlock) return { minStart, maxEnd };
 
@@ -583,18 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let newDirection = 0;
 
-        if (distTop < CONFIG.SCROLL_THRESHOLD) {
-            newDirection = -1; // Up
-        } else if (distBottom < CONFIG.SCROLL_THRESHOLD) {
-            newDirection = 1;  // Down
-        }
+        if (distTop < CONFIG.SCROLL_THRESHOLD) newDirection = -1;
+        else if (distBottom < CONFIG.SCROLL_THRESHOLD) newDirection = 1;
 
         if (newDirection !== scrollDirection) {
             scrollDirection = newDirection;
 
-            if (scrollDirection !== 0 && !autoScrollAF) {
-                performAutoScroll();
-            } else if (scrollDirection === 0 && autoScrollAF) {
+            if (scrollDirection !== 0 && !autoScrollAF) performAutoScroll();
+            else if (scrollDirection === 0 && autoScrollAF) {
                 cancelAnimationFrame(autoScrollAF);
                 autoScrollAF = null;
             }
@@ -610,14 +482,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Core Logic
+    // Core Drag/Resize Logic
     // ----------------
     function handlePointerMoveLogic(clientY) {
         if (!isDragging && !isResizing) {
             updateGhostPosition(clientY);
             return;
         }
-
         if (!activeElement) return;
 
         const currentRawY = getCanvasRelativeY(clientY, canvas);
@@ -625,50 +496,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const limits = getCollisionLimits(activeBlockId);
 
-        // --- RESIZE ---
+        // RESIZE
         if (isResizing) {
-            let newHeightRaw = initialBlockHeight + deltaY;
-            let snappedHeight = Math.round(newHeightRaw / CONFIG.SLOT_HEIGHT) * CONFIG.SLOT_HEIGHT;
+            const newHeightRaw = initialBlockHeight + deltaY;
+            const snappedHeight = Math.round(newHeightRaw / CONFIG.SLOT_HEIGHT) * CONFIG.SLOT_HEIGHT;
 
             const currentStart =
-                RANGE_START_MINUTES
-                +
                 (initialBlockTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
             const futureDuration =
-                (snappedHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+                Math.round(snappedHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
             const maxAllowedDuration = limits.maxEnd - currentStart;
 
             let clampedDuration = Math.min(futureDuration, maxAllowedDuration);
             clampedDuration = Math.max(clampedDuration, CONFIG.UNIT_MINUTES);
 
-            activeElement.style.height =
-                `${minutesToPixels(clampedDuration)}px`;
+            activeElement.style.height = `${minutesToPixels(clampedDuration)}px`;
         }
 
-        // --- DRAG ---
+        // DRAG
         if (isDragging) {
-            let newTopRaw = initialBlockTop + deltaY;
-            let snappedTop = Math.round(newTopRaw / CONFIG.SLOT_HEIGHT) * CONFIG.SLOT_HEIGHT;
+            const newTopRaw = initialBlockTop + deltaY;
+            const snappedTop = Math.round(newTopRaw / CONFIG.SLOT_HEIGHT) * CONFIG.SLOT_HEIGHT;
 
             const activeBlock = blocks.find(b => b.id === activeBlockId);
             const duration = activeBlock ? activeBlock.duration : CONFIG.DEFAULT_DURATION;
 
             const futureStart =
-                RANGE_START_MINUTES
-                +
-                (snappedTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+                Math.round(snappedTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
             const minAllowedStart = limits.minStart;
             const maxAllowedStart = limits.maxEnd - duration;
 
-            const clampedStart =
-                clamp(futureStart, minAllowedStart, maxAllowedStart);
+            const clampedStart = clamp(futureStart, minAllowedStart, maxAllowedStart);
 
-            activeElement.style.top =
-                `${minutesToPixels(clampedStart - RANGE_START_MINUTES
-                )}px`;
+            activeElement.style.top = `${minutesToPixels(clampedStart)}px`;
         }
     }
 
@@ -678,6 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('pointerdown', (e) => {
         closeContextMenu();
 
+        // click destro mouse ignorato (context menu gestito separatamente)
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         const targetBlock = e.target.closest('.uo-timeline-block');
@@ -694,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (blockEl) blockEl.classList.add('is-active');
         };
 
-        // --- RESIZE ---
+        // RESIZE
         if (targetResizer && targetBlock) {
             e.preventDefault();
             isResizing = true;
@@ -711,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- DRAG / DELETE (ALT) ---
+        // DRAG / DELETE (ALT)
         if (targetBlock) {
             if (e.altKey) {
                 deleteBlock(targetBlock.dataset.blockId);
@@ -732,22 +596,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- CREATE ---
+        // CREATE
         if (currentGhostY === null) return;
 
         activeBlockId = null;
-        const minutesFromStart = (currentGhostY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
-        let tStart = RANGE_START_MINUTES
-            + minutesFromStart;
+        const startSlot = Math.round(currentGhostY / CONFIG.SLOT_HEIGHT);
+        let tStart = startSlot * CONFIG.UNIT_MINUTES;
         let tDuration = snapToUnit(CONFIG.DEFAULT_DURATION);
 
-        // Smart Placement
-        let limitStart = RANGE_START_MINUTES
-            ;
-        const totalMinutes = (canvas.scrollHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
-        let limitEnd = RANGE_START_MINUTES
-            + totalMinutes;
+        const totalMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
+
+        // Smart placement (collision aware)
+        let limitStart = 0;
+        let limitEnd = totalMinutes;
 
         for (const b of blocks) {
             const bEnd = b.tStart + b.duration;
@@ -767,35 +629,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newBlock = {
             id: generateId(),
-            tStart: tStart,
+            tStart,
             duration: tDuration,
             label: 'NEW SLOT',
             color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)],
-            // [ESTENSIONE] Inizializzazione array staff vuoto
             staff: []
         };
 
         blocks.push(newBlock);
         activeBlockId = newBlock.id;
-        renderBlocks();
+
         TimelineRepository.save(blocks);
+        renderBlocks();
     });
 
-    // ----------------
     // Pointer Move
-    // ----------------
     canvas.addEventListener('pointermove', (e) => {
         lastClientY = e.clientY;
 
-        if (isDragging || isResizing) {
-            checkAutoScroll(e.clientY);
-        }
+        if (isDragging || isResizing) checkAutoScroll(e.clientY);
+
         handlePointerMoveLogic(e.clientY);
     });
 
-    // ----------------
     // Pointer Leave
-    // ----------------
     canvas.addEventListener('pointerleave', () => {
         if (!isDragging && !isResizing) {
             lastClientY = null;
@@ -804,9 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ----------------
     // Pointer Up
-    // ----------------
     canvas.addEventListener('pointerup', () => {
         stopAutoScroll();
 
@@ -822,9 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const finalTop = parseFloat(activeElement.style.top);
                 const finalHeight = parseFloat(activeElement.style.height);
 
-                // Check se è cambiato qualcosa per evitare save inutili
-                const newStart = RANGE_START_MINUTES
-                    + (finalTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+                const newStart = (finalTop / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
                 const newDuration = (finalHeight / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
 
                 if (blocks[index].tStart !== newStart || blocks[index].duration !== newDuration) {
@@ -841,12 +694,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderBlocks();
 
-        if (lastClientY !== null) {
-            updateGhostPosition(lastClientY);
-        }
+        if (lastClientY !== null) updateGhostPosition(lastClientY);
 
-        if (needsSave) {
-            TimelineRepository.save(blocks);
-        }
+        if (needsSave) TimelineRepository.save(blocks);
     });
+
+    // ----------------
+    // First render
+    // ----------------
+    renderBlocks();
 });

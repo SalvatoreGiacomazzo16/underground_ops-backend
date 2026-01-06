@@ -88,13 +88,10 @@
     </div>
 </div>
 
-
 <script>
-  window.__TIMELINE_EVENT__ = {
-    start: @json(optional($event->start_datetime)->toIso8601String()),
-    end:   @json(optional($event->end_datetime)->toIso8601String()),
-  };
+    window.__TIMELINE_CONFIG__ = @json($timelineConfig);
 </script>
+
 
 
 
@@ -114,7 +111,7 @@
 
             {{-- I blocchi (.uo-timeline-block) verranno iniettati qui dal JS --}}
 {{-- Range visivo inizio - fine evento --}}
-            <div class="uo-event-range" aria-hidden="true"></div>
+
 
         </div>
     </div>

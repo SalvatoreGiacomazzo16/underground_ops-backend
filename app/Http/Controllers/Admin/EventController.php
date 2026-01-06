@@ -10,22 +10,45 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use App\Support\TimelineTime;
 
 class EventController extends Controller
 {
     /* ============================
         TIMELINE (DEFAULT)
     ============================ */
-    public function index()
-    {
-        $eventsByDay = Event::with('location')
-            ->where('created_by', Auth::id())
-            ->orderBy('start_datetime')
-            ->get()
-            ->groupBy(fn ($event) => $event->start_datetime->toDateString());
+   /* ============================
+    TIMELINE (DEFAULT)
+============================ */
+public function index()
+{
+    $events = Event::with('location')
+        ->where('created_by', Auth::id())
+        ->orderBy('start_datetime')
+        ->get();
 
-        return view('dashboard.events.events-index', compact('eventsByDay'));
-    }
+    // 🔑 Prepariamo i dati per la timeline
+    $timelineEvents = $events->map(fn ($event) => [
+        'id'         => $event->id,
+        'title'      => $event->title,
+        'start_slot' => TimelineTime::startSlot($event->start_datetime),
+        'end_slot'   => TimelineTime::endSlot(
+            $event->start_datetime,
+            $event->end_datetime
+        ),
+    ]);
+
+    // grouping per giorno (come prima)
+    $eventsByDay = $events->groupBy(
+        fn ($event) => $event->start_datetime->toDateString()
+    );
+
+    return view(
+        'dashboard.events.events-index',
+        compact('eventsByDay', 'timelineEvents')
+    );
+}
+
 
     /* ============================
         TABLE VIEW
