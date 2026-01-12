@@ -91,4 +91,29 @@ public static function axisStartSlot(
     return intdiv($minutes, $unitMinutes);
 }
 
+public static function isMultiDayEvent(
+    Carbon $start,
+    ?Carbon $end,
+    int $windowHours = 12
+): bool {
+    if (!$end) {
+        return false;
+    }
+
+    // stesso giorno calendario → NON multi
+    if ($start->isSameDay($end)) {
+        return false;
+    }
+
+    // overnight classico (22 → 03) → NON multi
+    if ($end->diffInHours($start) <= 12) {
+        return false;
+    }
+
+    // tutto il resto è multi-day
+    return true;
+}
+
+
+
 }

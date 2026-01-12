@@ -40,80 +40,102 @@
             $statusClass = 'is-past';
         }
     }
+
+    $isMulti = ($timelineConfig['mode'] ?? 'single') === 'multi';
 @endphp
 
-
 <div class="uo-timeline">
-<script>
-    window.UO_CONTEXT = {
-        userId: {{ auth()->id() }},
-        eventId: {{ $event->id }}
-    };
-</script>
 
+    {{-- CONTEXT JS --}}
+    <script>
+        window.UO_CONTEXT = {
+            userId: {{ auth()->id() }},
+            eventId: {{ $event->id }}
+        };
+    </script>
 
- {{-- HEADER TIMELINE — EVENT CONTEXT --}}
-<div class="uo-timeline-header">
+    {{-- =========================
+         HEADER TIMELINE
+    ========================== --}}
+    <div class="uo-timeline-header">
 
-    <div class="uo-timeline-header__stack">
+        {{-- MULTI DAY BADGE + PAGINATION (SOLO SE MULTI) --}}
+        @if($isMulti)
+            <div class="uo-timeline-multiday">
+                <span class="uo-meta-badge is-multiday">
+                    ⏱ evento multi-giorno
+                </span>
 
-        <div class="uo-timeline-header__main">
-            <span class="uo-meta-label">Evento</span>
-            <strong class="uo-meta-value">
-                {{ $event->title }}
-            </strong>
+                {{-- PAGINAZIONE (placeholder, NON logica) --}}
+                <div class="uo-timeline-pagination is-disabled">
+                    <span class="uo-timeline-nav is-prev is-disabled">
+                        ← precedente
+                    </span>
+
+                    <span class="uo-timeline-page-indicator">
+                        Finestra 1 / ?
+                    </span>
+
+                    <span class="uo-timeline-nav is-next is-disabled">
+                        successiva →
+                    </span>
+                </div>
+            </div>
+        @endif
+
+        {{-- INFO EVENTO --}}
+        <div class="uo-timeline-header__stack">
+
+            <div class="uo-timeline-header__main">
+                <span class="uo-meta-label">Evento</span>
+                <strong class="uo-meta-value">
+                    {{ $event->title }}
+                </strong>
+            </div>
+
+            @if($event->start_datetime)
+                <div class="uo-timeline-header__date">
+                    <span class="uo-meta-date">
+                        📅 {{ $eventDate->translatedFormat('l d F Y') }}
+                    </span>
+
+                    <span class="uo-meta-status {{ $statusClass }}">
+                        {{ $statusLabel }}
+                    </span>
+                </div>
+            @endif
+
+            @if($event->location)
+                <div class="uo-timeline-header__sub">
+                    <span class="uo-meta-separator">•</span>
+                    <span class="uo-meta-value">
+                        <strong>{{ $event->location->name }}</strong>
+                    </span>
+                </div>
+            @endif
+
         </div>
-
-        @if($event->start_datetime)
-            <div class="uo-timeline-header__date">
-                <span class="uo-meta-date">
-                    📅 {{ $eventDate->translatedFormat('l d F Y') }}
-                </span>
-
-                <span class="uo-meta-status {{ $statusClass }}">
-                    {{ $statusLabel }}
-                </span>
-            </div>
-        @endif
-
-        @if($event->location)
-            <div class="uo-timeline-header__sub">
-                <span class="uo-meta-separator">•</span>
-                <span class="uo-meta-value">
-                   <strong>{{ $event->location->name }}</strong>
-                </span>
-            </div>
-        @endif
-
     </div>
-</div>
 
-<script>
-    window.__TIMELINE_CONFIG__ = @json($timelineConfig);
-</script>
+    {{-- CONFIG PER JS --}}
+    <script>
+        window.__TIMELINE_CONFIG__ = @json($timelineConfig);
+    </script>
 
-
-
-
-
-
-    {{-- BODY --}}
-    {{-- Questo è il contenitore che gestisce lo scroll verticale (scrollTop) --}}
+    {{-- =========================
+         BODY TIMELINE
+    ========================== --}}
     <div class="uo-timeline-body">
 
-        {{-- AXIS: Colonna sinistra dove JS inietta gli orari --}}
+        {{-- AXIS --}}
         <div class="uo-timeline-axis" id="timeline-axis"></div>
 
-        {{-- CANVAS: Area interattiva destra --}}
+        {{-- CANVAS --}}
         <div class="uo-timeline-canvas">
-            {{-- GHOST: Linea guida per lo snap --}}
             <div class="uo-timeline-ghost"></div>
-
-            {{-- I blocchi (.uo-timeline-block) verranno iniettati qui dal JS --}}
-{{-- Range visivo inizio - fine evento --}}
-
-
+            {{-- blocchi e range vengono iniettati dal JS --}}
         </div>
+
     </div>
 
 </div>

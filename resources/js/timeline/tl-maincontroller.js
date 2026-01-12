@@ -90,8 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderEventRangeFromSlots({
         canvas,
-        startSlot: cfg.event.start_slot,        // relativo (0..totalSlots)
-        endSlot: cfg.event.end_slot,            // relativo
         rangeStartSlot: cfg.range_start_slot,   // tipicamente 0
         slotHeight: CONFIG.SLOT_HEIGHT
     });
