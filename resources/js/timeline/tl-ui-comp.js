@@ -185,46 +185,84 @@ export function renderEventRangeFromAxis({
     range.style.height = `${heightPx}px`;
 }
 
+
 function minutesToHHMM(totalMinutes) {
+    // ora leggibile anche se totalMinutes > 1440
     const minutes = ((totalMinutes % 1440) + 1440) % 1440;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+
 export function renderEventRangeFromSlots({ canvas, slotHeight }) {
     const cfg = window.__TIMELINE_CONFIG__;
-    if (!cfg?.time_real) return;
+    if (!cfg?.event) return;
 
     let el = canvas.querySelector(".uo-event-range");
     if (!el) {
         el = document.createElement("div");
         el.className = "uo-event-range uo-event-range--slots";
-        el.setAttribute("aria-hidden", "true");
         canvas.appendChild(el);
     }
 
     const unit = cfg.unit_minutes ?? 15;
 
+    // axis start minutes: in MULTI abbiamo axis_start_minutes (assoluti)
     const axisStartMinutes =
-        cfg.axis_start_minutes ?? ((cfg.axis_start_slot ?? 0) * unit);
+        cfg.axis_start_minutes ??
+        cfg.axis_start_slot * unit;
 
-    const startMin = cfg.time_real.start_minutes; // real
-    const endMin = cfg.time_real.end_minutes;   // real (può essere >1440)
+    // ===== RANGE VISIVO (sempre clippato, così non si “comprimes”)
+    // in SINGLE usa time_real (0..1440 o 1440+ se overnight)
+    // in MULTI time_real è già assoluto e clippato alla finestra
+    const vis = cfg.time_real;
+    if (!vis?.start_minutes || !vis?.end_minutes) return;
 
-    const relStart = startMin - axisStartMinutes;
-    const relEnd = endMin - axisStartMinutes;
+    const startMinVis = vis.start_minutes;
+    const endMinVis = vis.end_minutes;
+
+    const relStart = startMinVis - axisStartMinutes;
+    const relEnd = endMinVis - axisStartMinutes;
 
     const pxPerMinute = slotHeight / unit;
+    const top = relStart * pxPerMinute;
+    const height = Math.max(2, (relEnd - relStart) * pxPerMinute);
 
-    const topPx = relStart * pxPerMinute;
-    const heightPx = Math.max(4, (relEnd - relStart) * pxPerMinute);
+    el.style.top = `${top}px`;
+    el.style.height = `${height}px`;
 
-    el.style.top = `${topPx}px`;
-    el.style.height = `${heightPx}px`;
+    // ===== TOOLTIP (QUI È LA FIX)
+    // MULTI: mostra SEMPRE il range completo dell’evento
+    // SINGLE: mostra il range reale (eventuale overnight)
+    const isMulti = cfg.mode === "multi";
+    const full = cfg.time_full;
 
-    el.dataset.tooltip = `${minutesToHHMM(startMin)} → ${minutesToHHMM(endMin)}`;
+    const tooltipStart = isMulti && full?.start_minutes != null
+        ? full.start_minutes
+        : startMinVis;
+
+    const tooltipEnd = isMulti && full?.end_minutes != null
+        ? full.end_minutes
+        : endMinVis;
+
+    // suffix “continua” se clippato nella finestra corrente
+    const clippedTop = !!cfg.event?.is_clipped_top;
+    const clippedBottom = !!cfg.event?.is_clipped_bottom;
+
+    let suffix = "";
+    if (isMulti) {
+        if (clippedTop && clippedBottom) suffix = "  (← continua • continua →)";
+        else if (clippedTop) suffix = "  (← continua)";
+        else if (clippedBottom) suffix = "  (continua →)";
+    }
+
+    el.dataset.tooltip =
+        `${minutesToHHMM(tooltipStart)} → ${minutesToHHMM(tooltipEnd)}` +
+        suffix;
+
 }
+
 
 
 

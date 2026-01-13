@@ -6,8 +6,12 @@ use Carbon\Carbon;
 
 class TimelineTime
 {
+    /* ============================================================
+        BASE TIME HELPERS
+    ============================================================ */
+
     /**
-     * Minuti assoluti wall-clock (0–1439)
+     * Minuti wall-clock (0–1439)
      */
     public static function minutes(Carbon $dt): int
     {
@@ -15,21 +19,32 @@ class TimelineTime
     }
 
     /**
-     * Slot index (snappato per difetto)
-     * es: 16:39 → slot 66 (con unit 15)
+     * Giorno base dell’evento (startOfDay)
      */
+    private static function baseDay(Carbon $eventStart): Carbon
+    {
+        return $eventStart->copy()->startOfDay();
+    }
+
+    /**
+     * Minuti ASSOLUTI rispetto al giorno base (può superare 1440)
+     */
+    private static function absMinutes(Carbon $baseDay, Carbon $dt): int
+    {
+        return $baseDay->diffInMinutes($dt, false);
+    }
+
+    /* ============================================================
+        SLOT HELPERS
+    ============================================================ */
+
     public static function startSlot(
         Carbon $start,
         int $unitMinutes = 15
     ): int {
-        $minutes = self::minutes($start);
-        return intdiv($minutes, $unitMinutes);
+        return intdiv(self::minutes($start), $unitMinutes);
     }
 
-    /**
-     * Slot index di fine (snappato per eccesso)
-     * gestisce overnight
-     */
     public static function endSlot(
         Carbon $start,
         ?Carbon $end,
@@ -43,7 +58,6 @@ class TimelineTime
         $startMin = self::minutes($start);
         $endMin   = self::minutes($end);
 
-        // overnight
         if ($endMin < $startMin) {
             $endMin += 1440;
         }
@@ -51,9 +65,6 @@ class TimelineTime
         return (int) ceil($endMin / $unitMinutes);
     }
 
-    /**
-     * Numero totale di slot della timeline (12h fisse)
-     */
     public static function totalSlots(
         int $totalHours = 12,
         int $unitMinutes = 15
@@ -62,7 +73,7 @@ class TimelineTime
     }
 
     /**
-     * Slot di partenza dell’axis (4h prima, ora intera)
+     * Axis start = X ore prima dell’evento, arrotondato all’ora
      */
     public static function axisStartSlot(
         Carbon $start,
@@ -77,9 +88,12 @@ class TimelineTime
         return intdiv(self::minutes($axisStart), $unitMinutes);
     }
 
+    /* ============================================================
+        DOMAIN DECISION
+    ============================================================ */
+
     /**
-     * 🔑 DECISIONE DOMINIO
-     * Evento considerato multi-window se ESCE dalla finestra visiva
+     * Evento MULTI se ESCE dalla finestra visiva
      */
     public static function isMultiWindowEvent(
         Carbon $eventStart,
@@ -108,9 +122,10 @@ class TimelineTime
             $end->greaterThan($windowEnd);
     }
 
-    /**
-     * MULTI DAY — finestra paginata
-     */
+    /* ============================================================
+        MULTI DAY WINDOW
+    ============================================================ */
+
     public static function buildMultiDayWindow(
         Carbon $eventStart,
         Carbon $eventEnd,
@@ -123,48 +138,31 @@ class TimelineTime
             $eventEnd = $eventEnd->copy()->addDay();
         }
 
+        $base = self::baseDay($eventStart);
+
+        // ===== finestra base (page 0)
+        $baseAxisStart = $eventStart
+            ->copy()
+            ->subHours($beforeHours)
+            ->startOfHour();
+
         $windowMinutes = $windowHours * 60;
-      // prima finestra (page 0)
-$firstWindowStart = $eventStart
-    ->copy()
-    ->subHours($beforeHours)
-    ->startOfHour();
 
-$firstWindowEnd = $firstWindowStart
-    ->copy()
-    ->addHours($windowHours);
+        // durata totale evento
+        $totalMinutes = self::absMinutes($base, $eventEnd)
+            - self::absMinutes($base, $eventStart);
 
-// fine evento normalizzata
-$normalizedEnd = $eventEnd->copy();
-if ($normalizedEnd->lessThan($eventStart)) {
-    $normalizedEnd->addDay();
-}
+        $totalPages = max(1, (int) ceil($totalMinutes / $windowMinutes));
+        $pageIndex  = max(0, min($pageIndex, $totalPages - 1));
 
-// minuti eccedenti la prima finestra
-$overflowMinutes = max(
-    0,
-    $firstWindowEnd->diffInMinutes($normalizedEnd, false)
-);
-
-// pagine totali
-$totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
-
-
-        $pageIndex = max(0, min($pageIndex, $totalPages - 1));
-
-        if ($pageIndex === 0) {
-            $axisStart = $eventStart
-                ->copy()
-                ->subHours($beforeHours)
-                ->startOfHour();
-        } else {
-            $axisStart = $eventStart
-                ->copy()
-                ->addMinutes($windowMinutes * $pageIndex);
-        }
+        // ===== axis della pagina (CONTINUO)
+        $axisStart = $baseAxisStart
+            ->copy()
+            ->addMinutes($windowMinutes * $pageIndex);
 
         $axisEnd = $axisStart->copy()->addMinutes($windowMinutes);
 
+        // ===== clipping visibile
         $visibleStart = $eventStart->greaterThan($axisStart)
             ? $eventStart
             : $axisStart;
@@ -175,15 +173,23 @@ $totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
 
         $hasVisible = $visibleEnd->greaterThan($visibleStart);
 
-        $axisStartMinutes = self::minutes($axisStart);
-        $startMinutes     = self::minutes($visibleStart);
-        $endMinutes       = self::minutes($visibleEnd);
+        // ===== minuti assoluti
+        $axisStartAbs   = self::absMinutes($base, $axisStart);
+        $axisEndAbs     = self::absMinutes($base, $axisEnd);
+        $visibleStartAbs = self::absMinutes($base, $visibleStart);
+        $visibleEndAbs   = self::absMinutes($base, $visibleEnd);
 
-        if ($endMinutes < $startMinutes) {
-            $endMinutes += 1440;
-        }
+        // ===== slot relativi alla pagina
+        $startOffset = $visibleStartAbs - $axisStartAbsabs = $axisStartAbs;
+        $endOffset   = $visibleEndAbs   - $axisStartAbs;
 
-        $axisStartSlot = intdiv($axisStartMinutes, $unitMinutes);
+        $startSlot = $hasVisible
+            ? intdiv($startOffset, $unitMinutes)
+            : null;
+
+        $endSlot = $hasVisible
+            ? (int) ceil($endOffset / $unitMinutes)
+            : null;
 
         return [
             'page' => [
@@ -193,35 +199,37 @@ $totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
                 'is_last'   => $pageIndex === ($totalPages - 1),
             ],
 
-            'axis_start_slot' => $axisStartSlot,
+            // 🔑 continuità temporale
+            'axis_start_slot'    => intdiv($axisStartAbs, $unitMinutes),
+            'axis_start_minutes' => $axisStartAbs,
 
-          'event' => [
-    'has_visible_part' => $hasVisible,
+            'event' => [
+                'has_visible_part' => $hasVisible,
+                'start_slot'       => $hasVisible ? max(0, $startSlot) : null,
+                'end_slot'         => $hasVisible ? max(0, $endSlot) : null,
 
-    'start_slot' => $hasVisible
-        ? intdiv($startMinutes - $axisStartMinutes, $unitMinutes)
-        : null,
+                'is_clipped_top'    => $eventStart->lessThan($axisStart),
+                'is_clipped_bottom' => $eventEnd->greaterThan($axisEnd),
+            ],
 
-    'end_slot' => $hasVisible
-        ? (int) ceil(($endMinutes - $axisStartMinutes) / $unitMinutes)
-        : null,
-
-    // 🔑 STEP A — CLIPPING FLAGS
-    'is_clipped_top'    => $eventStart->lessThan($axisStart),
-    'is_clipped_bottom' => $eventEnd->greaterThan($axisEnd),
-],
-
-
+            // per range + hover (VISIBILE)
             'time_real' => [
-                'start_minutes' => self::minutes($eventStart),
-                'end_minutes'   => self::minutes($eventEnd),
+                'start_minutes' => $hasVisible ? $visibleStartAbs : null,
+                'end_minutes'   => $hasVisible ? $visibleEndAbs : null,
+            ],
+
+            // per info complete (opzionale)
+            'time_full' => [
+                'start_minutes' => self::absMinutes($base, $eventStart),
+                'end_minutes'   => self::absMinutes($base, $eventEnd),
             ],
         ];
     }
 
-    /**
-     * 🔑 SINGLE SOURCE OF TRUTH
-     */
+    /* ============================================================
+        SINGLE SOURCE OF TRUTH
+    ============================================================ */
+
     public static function buildTimelineConfig(
         Carbon $start,
         ?Carbon $end,
@@ -237,7 +245,11 @@ $totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
             $beforeHours
         );
 
+        /* =======================
+            SINGLE DAY
+        ======================= */
         if (!$isMulti) {
+
             $axisStartSlot = self::axisStartSlot($start, $beforeHours, $unitMinutes);
 
             $startMin = self::minutes($start);
@@ -270,6 +282,9 @@ $totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
             ];
         }
 
+        /* =======================
+            MULTI DAY
+        ======================= */
         $window = self::buildMultiDayWindow(
             $start,
             $end,
@@ -278,15 +293,25 @@ $totalPages = 1 + (int) ceil($overflowMinutes / $windowMinutes);
             $beforeHours,
             $unitMinutes
         );
+return array_merge(
+    [
+        'mode' => 'multi',
+        'unit_minutes' => $unitMinutes,
+        'range_start_slot' => 0,
+        'total_slots' => self::totalSlots($windowHours, $unitMinutes),
 
-        return array_merge(
-            [
-                'mode' => 'multi',
-                'unit_minutes' => $unitMinutes,
-                'range_start_slot' => 0,
-                'total_slots' => self::totalSlots($windowHours, $unitMinutes),
-            ],
-            $window
-        );
+        // 🔑 RANGE COMPLETO EVENTO (PER TOOLTIP)
+        'time_full' => [
+            'start_minutes' => self::minutes($start),
+            'end_minutes' => (
+                $end && self::minutes($end) < self::minutes($start)
+                    ? self::minutes($end) + 1440
+                    : self::minutes($end)
+            ),
+        ],
+    ],
+    $window
+);
+
     }
 }
