@@ -59,29 +59,56 @@
     ========================== --}}
     <div class="uo-timeline-header">
 
-        {{-- MULTI DAY BADGE + PAGINATION (SOLO SE MULTI) --}}
-        @if($isMulti)
-            <div class="uo-timeline-multiday">
-                <span class="uo-meta-badge is-multiday">
-                    ⏱ evento multi-giorno
+  @if($isMulti)
+    <div class="uo-timeline-multiday">
+
+        <span class="uo-meta-badge is-multiday">
+            ⏱ evento multi-giorno
+        </span>
+
+        <div class="uo-timeline-pagination">
+
+            {{-- PRECEDENTE --}}
+            @if(!$timelineConfig['page']['is_first'])
+                <a
+                    href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] - 1 }}"
+                    class="uo-timeline-nav is-prev"
+                >
+                    ← precedente
+                </a>
+            @else
+                <span class="uo-timeline-nav is-prev is-disabled">
+                    ← precedente
                 </span>
+            @endif
 
-                {{-- PAGINAZIONE (placeholder, NON logica) --}}
-                <div class="uo-timeline-pagination is-disabled">
-                    <span class="uo-timeline-nav is-prev is-disabled">
-                        ← precedente
-                    </span>
+            {{-- INDICATORE --}}
+            <span class="uo-timeline-page-indicator">
+                Finestra
+                <strong>{{ $timelineConfig['page']['index'] + 1 }}</strong>
+                /
+                <strong>{{ $timelineConfig['page']['total'] }}</strong>
+            </span>
 
-                    <span class="uo-timeline-page-indicator">
-                        Finestra 1 / ?
-                    </span>
+            {{-- SUCCESSIVA --}}
+            @if(!$timelineConfig['page']['is_last'])
+                <a
+                    href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] + 1 }}"
+                    class="uo-timeline-nav is-next"
+                >
+                    successiva →
+                </a>
+            @else
+                <span class="uo-timeline-nav is-next is-disabled">
+                    successiva →
+                </span>
+            @endif
 
-                    <span class="uo-timeline-nav is-next is-disabled">
-                        successiva →
-                    </span>
-                </div>
-            </div>
-        @endif
+        </div>
+    </div>
+@endif
+
+
 
         {{-- INFO EVENTO --}}
         <div class="uo-timeline-header__stack">
