@@ -124,14 +124,16 @@ Route::get('/', fn () => view('pages.welcome'))
 | TEST DB (DEV ONLY)
 |--------------------------------------------------------------------------
 */
-Route::get('/db-test', function () {
-    try {
-        DB::connection()->getPdo();
-        return "DB OK → " . DB::connection()->getDatabaseName();
-    } catch (\Exception $e) {
-        return "DB ERROR → " . $e->getMessage();
-    }
-});
+if (app()->environment('local')) {
+    Route::get('/db-test', function () {
+        try {
+            DB::connection()->getPdo();
+            return "DB OK → " . DB::connection()->getDatabaseName();
+        } catch (\Exception $e) {
+            return "DB ERROR → " . $e->getMessage();
+        }
+    });
+}
 
 /*
 |--------------------------------------------------------------------------

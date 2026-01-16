@@ -125,17 +125,22 @@ class="uo-timeline-nav is-prev {{ $timelineConfig['page']['is_last'] ? 'is-activ
                 </strong>
             </div>
 
-            @if($event->start_datetime)
-                <div class="uo-timeline-header__date">
-                    <span class="uo-meta-date">
-                        📅 {{ $eventDate->translatedFormat('l d F Y') }}
-                    </span>
+      @if($event->start_datetime)
+    <div class="uo-timeline-header__date">
+        <span
+            class="uo-meta-date"
+            id="uo-timeline-current-date"
+            data-start-date="{{ $eventDate->format('Y-m-d') }}"
+        >
+            📅 {{ $eventDate->translatedFormat('l d F Y') }}
+        </span>
 
-                    <span class="uo-meta-status {{ $statusClass }}">
-                        {{ $statusLabel }}
-                    </span>
-                </div>
-            @endif
+        <span class="uo-meta-status {{ $statusClass }}" id="uo-timeline-date-status">
+            {{ $statusLabel }}
+        </span>
+    </div>
+@endif
+
 
             @if($event->location)
                 <div class="uo-timeline-header__sub">

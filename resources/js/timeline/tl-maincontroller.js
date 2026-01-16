@@ -77,6 +77,102 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Missing window.__TIMELINE_CONFIG__');
         return;
     }
+    function updateTimelineHeaderContext() {
+        const cfg = window.__TIMELINE_CONFIG__;
+        if (!cfg || cfg.mode !== "multi") return;
+
+        const dateEl = document.getElementById("uo-timeline-current-date");
+        const statusEl = document.getElementById("uo-timeline-date-status");
+
+        if (!dateEl || !statusEl) return;
+
+        const startDateStr = dateEl.dataset.startDate;
+        if (!startDateStr) return;
+
+        const baseDate = new Date(startDateStr);
+        const windowIndex = cfg.page?.index ?? 0;
+
+        // ===== DATA FINESTRA (NON calendario puro)
+        const startMin = cfg.time_real?.start_minutes;
+        const endMin = cfg.time_real?.end_minutes;
+        if (startMin == null || endMin == null) return;
+
+        const startDateTime = new Date(baseDate);
+        startDateTime.setDate(startDateTime.getDate() + windowIndex);
+        startDateTime.setHours(
+            Math.floor(startMin / 60),
+            startMin % 60,
+            0,
+            0
+        );
+
+        const endDateTime = new Date(startDateTime);
+        endDateTime.setMinutes(endDateTime.getMinutes() + (endMin - startMin));
+
+        // ===== FORMAT DATA HEADER
+        const sameDay =
+            startDateTime.toDateString() === endDateTime.toDateString();
+
+        const dateFormatter = new Intl.DateTimeFormat("it-IT", {
+            weekday: "long",
+            day: "2-digit",
+            month: "long"
+        });
+
+        const timeFormatter = new Intl.DateTimeFormat("it-IT", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        const datePart = sameDay
+            ? dateFormatter.format(startDateTime)
+            : `${dateFormatter.format(startDateTime)} → ${dateFormatter.format(endDateTime)}`;
+
+        const timePart =
+            `${timeFormatter.format(startDateTime)} → ${timeFormatter.format(endDateTime)}`;
+
+        dateEl.textContent = `🗓 ${datePart} • ${timePart}`;
+
+        // ===== BADGE OGGI / DOMANI / IERI (DINAMICO)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const windowDay = new Date(startDateTime);
+        windowDay.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.round(
+            (windowDay - today) / (1000 * 60 * 60 * 24)
+        );
+
+        let label = null;
+        let cls = null;
+
+        if (diffDays === 0) {
+            label = "Oggi";
+            cls = "is-today";
+        } else if (diffDays === 1) {
+            label = "Domani";
+            cls = "is-future";
+        } else if (diffDays === -1) {
+            label = "Ieri";
+            cls = "is-past";
+        } else if (diffDays > 1) {
+            label = `tra ${diffDays} giorni`;
+            cls = "is-future";
+        } else {
+            label = `${Math.abs(diffDays)} giorni fa`;
+            cls = "is-past";
+        }
+
+        // aggiorna badge
+        statusEl.textContent = label;
+        statusEl.className = `uo-meta-status ${cls}`;
+    }
+
+
+
+
+
 
     // Altezza timeline: 1 slot = SLOT_HEIGHT
     // (serve perché canvas abbia area reale e scorribile/cliccabile)
@@ -87,6 +183,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Axis + Range
     // ----------------
     renderTimeAxis(cfg);
+
+    // ----------------
+    // Header Date Sync (MULTI DAY)
+    // ----------------
+    updateTimelineHeaderContext();
+
 
     renderEventRangeFromSlots({
         canvas,

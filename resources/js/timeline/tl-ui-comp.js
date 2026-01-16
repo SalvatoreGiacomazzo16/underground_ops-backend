@@ -237,44 +237,30 @@ export function renderEventRangeFromSlots({ canvas, slotHeight }) {
     el.style.height = `${height}px`;
 
     // =========================
-    // MULTIDAY TIME LABEL (SINGOLA, INTELLIGENTE)
+    // MULTIDAY TIME LABEL — SOLO IN FONDO
     // =========================
     const isMulti = cfg.mode === "multi";
 
     if (isMulti) {
+        // pulizia
         el.querySelectorAll(".uo-range-time").forEach(n => n.remove());
 
-        const clippedTop = !!cfg.event?.is_clipped_top;
         const clippedBottom = !!cfg.event?.is_clipped_bottom;
-
         const full = cfg.time_full;
         if (!full) return;
 
-        const isFirstPage = !clippedTop;
-        const isLastPage = !clippedBottom;
-
-        let position = null;
-
-        // 👉 LOGICA UX CORRETTA
-        if (isFirstPage) {
-            position = "top";
-        } else {
-            position = "bottom";
-        }
-
+        // 👉 badge SEMPRE e SOLO in basso
         const badge = document.createElement("div");
-        badge.className = `uo-range-time uo-range-time--${position}`;
+        badge.className = "uo-range-time uo-range-time--bottom";
+        badge.textContent =
+            `${minutesToHHMM(full.start_minutes)} → ${minutesToHHMM(full.end_minutes)}`;
 
-        // testo badge
-        let text = `${minutesToHHMM(full.start_minutes)} → ${minutesToHHMM(full.end_minutes)}`;
-
-        // suffix SOLO nella prima pagina
-        if (isFirstPage && clippedBottom) {
-            text += " (continua →)";
-        }
-
-        badge.textContent = text;
         el.appendChild(badge);
+
+
+
+
+
     }
 
 

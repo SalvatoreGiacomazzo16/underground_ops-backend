@@ -179,3 +179,51 @@ $uo-header-height: 60px;
         margin-top: 0.25rem;
     }
 }
+
+
+.uo-error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at top, rgba(201, 22, 154, 0.15), transparent 60%),
+        #050008;
+}
+
+.uo-error-card {
+    text-align: center;
+    padding: 48px 40px;
+    border-radius: 16px;
+    background: rgba(10, 5, 20, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    max-width: 420px;
+}
+
+.uo-error-code {
+    font-size: 72px;
+    font-weight: 800;
+    color: #c9169a;
+    text-shadow: 0 0 18px rgba(201, 22, 154, 0.6);
+}
+
+.uo-error-title {
+    margin-top: 12px;
+    font-size: 22px;
+    color: #fff;
+}
+
+.uo-error-text {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #bbb;
+}
+
+.uo-error-actions {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+}

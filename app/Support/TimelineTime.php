@@ -173,7 +173,7 @@ class TimelineTime
 
         $hasVisible = $visibleEnd->greaterThan($visibleStart);
 
-        // ===== minuti assoluti
+    // ===== minuti assoluti
         $axisStartAbs   = self::absMinutes($base, $axisStart);
         $axisEndAbs     = self::absMinutes($base, $axisEnd);
         $visibleStartAbs = self::absMinutes($base, $visibleStart);
@@ -181,6 +181,8 @@ class TimelineTime
 
         // ===== slot relativi alla pagina
         $startOffset = $visibleStartAbs - $axisStartAbsabs = $axisStartAbs;
+        $axisStartAbs = self::absMinutes($base, $axisStart);
+        $startOffset = $visibleStartAbs - $axisStartAbs;
         $endOffset   = $visibleEndAbs   - $axisStartAbs;
 
         $startSlot = $hasVisible
