@@ -183,7 +183,9 @@ export function renderEventRangeFromAxis({
 
     range.style.top = `${topPx}px`;
     range.style.height = `${heightPx}px`;
+
 }
+
 
 
 function minutesToHHMM(totalMinutes) {
@@ -205,6 +207,8 @@ export function renderEventRangeFromSlots({ canvas, slotHeight }) {
         el.className = "uo-event-range uo-event-range--slots";
         canvas.appendChild(el);
     }
+
+
 
     const unit = cfg.unit_minutes ?? 15;
 
@@ -232,10 +236,53 @@ export function renderEventRangeFromSlots({ canvas, slotHeight }) {
     el.style.top = `${top}px`;
     el.style.height = `${height}px`;
 
+    // =========================
+    // MULTIDAY TIME LABEL (SINGOLA, INTELLIGENTE)
+    // =========================
+    const isMulti = cfg.mode === "multi";
+
+    if (isMulti) {
+        el.querySelectorAll(".uo-range-time").forEach(n => n.remove());
+
+        const clippedTop = !!cfg.event?.is_clipped_top;
+        const clippedBottom = !!cfg.event?.is_clipped_bottom;
+
+        const full = cfg.time_full;
+        if (!full) return;
+
+        const isFirstPage = !clippedTop;
+        const isLastPage = !clippedBottom;
+
+        let position = null;
+
+        // 👉 LOGICA UX CORRETTA
+        if (isFirstPage) {
+            position = "top";
+        } else {
+            position = "bottom";
+        }
+
+        const badge = document.createElement("div");
+        badge.className = `uo-range-time uo-range-time--${position}`;
+
+        // testo badge
+        let text = `${minutesToHHMM(full.start_minutes)} → ${minutesToHHMM(full.end_minutes)}`;
+
+        // suffix SOLO nella prima pagina
+        if (isFirstPage && clippedBottom) {
+            text += " (continua →)";
+        }
+
+        badge.textContent = text;
+        el.appendChild(badge);
+    }
+
+
+
     // ===== TOOLTIP (QUI È LA FIX)
     // MULTI: mostra SEMPRE il range completo dell’evento
     // SINGLE: mostra il range reale (eventuale overnight)
-    const isMulti = cfg.mode === "multi";
+
     const full = cfg.time_full;
 
     const tooltipStart = isMulti && full?.start_minutes != null

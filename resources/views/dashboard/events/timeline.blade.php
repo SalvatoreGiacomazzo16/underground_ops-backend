@@ -68,21 +68,25 @@
 
         <div class="uo-timeline-pagination">
 
-            {{-- PRECEDENTE --}}
-            @if(!$timelineConfig['page']['is_first'])
-                <a
-                    href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] - 1 }}"
-                    class="uo-timeline-nav is-prev"
-                >
-                    ← precedente
-                </a>
-            @else
-                <span class="uo-timeline-nav is-prev is-disabled">
-                    ← precedente
-                </span>
-            @endif
 
-            {{-- INDICATORE --}}
+
+
+
+{{-- PRECEDENTE --}}
+@if(!$timelineConfig['page']['is_first'])
+<a
+href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] - 1 }}"
+class="uo-timeline-nav is-prev {{ $timelineConfig['page']['is_last'] ? 'is-active' : '' }}"
+>
+← precedente
+</a>
+@else
+<span class="uo-timeline-nav is-prev is-disabled">
+    ← precedente
+    </span>
+    @endif
+
+ {{-- INDICATORE --}}
             <span class="uo-timeline-page-indicator">
                 Finestra
                 <strong>{{ $timelineConfig['page']['index'] + 1 }}</strong>
@@ -90,19 +94,20 @@
                 <strong>{{ $timelineConfig['page']['total'] }}</strong>
             </span>
 
-            {{-- SUCCESSIVA --}}
-            @if(!$timelineConfig['page']['is_last'])
-                <a
-                    href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] + 1 }}"
-                    class="uo-timeline-nav is-next"
-                >
-                    successiva →
-                </a>
-            @else
-                <span class="uo-timeline-nav is-next is-disabled">
-                    successiva →
-                </span>
-            @endif
+
+                {{-- SUCCESSIVA --}}
+           @if(!$timelineConfig['page']['is_last'])
+               <a
+                   href="{{ route('admin.events.timeline', $event) }}?page={{ $timelineConfig['page']['index'] + 1 }}"
+                   class="uo-timeline-nav is-next is-active"
+               >
+                   successiva →
+               </a>
+           @else
+               <span class="uo-timeline-nav is-next is-disabled">
+                   successiva →
+               </span>
+           @endif
 
         </div>
     </div>
