@@ -32,7 +32,7 @@
     {{-- BOTTONE --}}
     <a href="{{ auth()->check() ? route('admin.dashboard') : route('welcome') }}"
        class="uo-btn uo-btn-outline">
-       {{ auth()->check() ? 'Vai alla Dashboard' : 'Torna alla Home' }}
+       {{ auth()->check() ? 'Torna alla Dashboard' : 'Torna alla Home' }}
     </a>
 
 </div>

@@ -37,7 +37,7 @@
     wrapperId="uo-events-table"
     wrapperClass="uo-events-table-wrapper"
     :headers="['#','Titolo','Tipo','Data','Location','Stato']"
-    :columns="[5,25,10,15,30,15]"
+    :columns="[10,20,10,15,25,15]"
     actions="true"
 >
     @forelse($events as $event)

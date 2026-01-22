@@ -13,21 +13,21 @@
 
     {{-- CODICE ERRORE --}}
     <h1 class="uo-title uo-glitch-text mb-3"
-        data-text="403">
-        403
+        data-text="500">
+        500
     </h1>
 
     {{-- SOTTOTITOLO --}}
     <h2 class="uo-glitch-text mb-3"
-        data-text="Accesso negato"
+        data-text="Errore interno"
         style="font-family:'Eater', cursive; color:#C9169A;">
-        Accesso negato
+        Errore interno
     </h2>
 
     {{-- TESTO --}}
     <p class="mb-4 text-light">
-        Questa zona è riservata.<br>
-        Non hai i permessi per accedere a questa sezione.
+        Qualcosa è andato storto nel sottosuolo.<br>
+        Il sistema ha avuto un problema interno.
     </p>
 
     {{-- AZIONI --}}
@@ -39,6 +39,10 @@
         </a>
     </div>
 
+    {{-- SUBTLE NOTE --}}
+    <small class="text-white opacity-75 mt-4">
+        Stiamo già lavorando per sistemarlo.
+    </small>
 
 </div>
 

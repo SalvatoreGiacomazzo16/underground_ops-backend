@@ -12,11 +12,10 @@ use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use App\Support\TimelineTime;
 
+
 class EventController extends Controller
 {
-    /* ============================
-        TIMELINE (DEFAULT)
-    ============================ */
+
    /* ============================
     TIMELINE (DEFAULT)
 ============================ */
