@@ -548,8 +548,8 @@ main.admin-content {
     left: 0;
     right: 0;
 
-    pointer-events: auto;
-    z-index: 2; // sotto i blocchi, sopra il canvas
+    pointer-events: none;
+    z-index: 2;
 
     /* ===== Tooltip ===== */
     &::after {

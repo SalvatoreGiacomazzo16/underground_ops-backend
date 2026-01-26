@@ -6,9 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\StaffProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EventStaffController extends Controller
 {
+
+ public function index()
+    {
+        return Auth::user()
+            ->staff() // relazione
+            ->select('id', 'name', 'role')
+            ->orderBy('name')
+            ->get();
+    }
+
+
+
     /* ============================
         EDIT — FORM STAFF EVENTO
     ============================ */

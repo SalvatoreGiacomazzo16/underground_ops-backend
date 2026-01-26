@@ -141,3 +141,7 @@ if (app()->environment('local')) {
 |--------------------------------------------------------------------------
 */
 Route::fallback(fn () => response()->view('pages.not-found', [], 404));
+
+Route::get('/admin/staff', [EventStaffController::class, 'index'])
+    ->middleware('auth')
+    ->name('admin.staff.index');

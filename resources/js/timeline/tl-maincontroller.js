@@ -20,6 +20,9 @@ import {
     renderEventRangeFromSlots
 } from './tl-ui-comp.js';
 
+
+
+
 // ================================
 // TIME AXIS RENDER (SLOT-BASED)
 // ================================
@@ -290,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderBlocks() {
         if (isEditingText) return;
 
+        // pulizia
         canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
 
         const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
@@ -301,8 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const snappedStart = snapToUnit(block.tStart);
             const snappedDuration = snapToUnit(block.duration);
 
+            // durata minima garantita
             const safeDuration = Math.max(snappedDuration, MIN_DURATION);
 
+            // fuori timeline
             if (snappedStart < 0 || snappedStart >= timelineMinutes) return;
 
             const top = minutesToPixels(snappedStart);
@@ -312,22 +318,21 @@ document.addEventListener('DOMContentLoaded', () => {
             el.className = 'uo-timeline-block';
             el.dataset.blockId = block.id;
 
-            if (block.id === activeBlockId) el.classList.add('is-active');
+            if (block.id === activeBlockId) {
+                el.classList.add('is-active');
+            }
 
             el.style.top = `${top}px`;
             el.style.height = `${height}px`;
             el.style.backgroundColor = block.color;
 
+            // size class basata sull’altezza reale renderizzata
             let sizeClass = 'uo-block--m';
-
-            if (height <= 80) sizeClass = 'uo-block--s';      // ~60 min
+            if (height <= 80) sizeClass = 'uo-block--s';     // ~60 min
             else if (height >= 160) sizeClass = 'uo-block--l';
-
             el.classList.add(sizeClass);
 
-
-            const staffCount = block.staff.length;
-
+            // markup
             el.innerHTML = `
             <button
                 class="uo-block-delete"
@@ -349,41 +354,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
 
-            <div
-                class="uo-block-staff-icon"
-                data-block-id="${block.id}"
-                title="Staff (${staffCount})"
-            >
-                👥
-                <span class="uo-block-staff-count">${staffCount}</span>
-            </div>
+            ${renderStaffStrip(block)}
 
             <div class="uo-resizer" title="Ridimensiona"></div>
         `;
 
-            // DELETE
+            /* =========================
+               DELETE
+            ========================= */
             const delBtn = el.querySelector('[data-delete-block]');
-            delBtn.addEventListener('pointerdown', e => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-            delBtn.addEventListener('click', e => {
-                e.preventDefault();
-                e.stopPropagation();
-                deleteBlock(block.id);
-            });
+            if (delBtn) {
+                delBtn.addEventListener('pointerdown', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
 
-            // INLINE EDIT TITOLO
+                delBtn.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteBlock(block.id);
+                });
+            }
+
+            /* =========================
+               INLINE EDIT TITOLO
+            ========================= */
             const titleEl = el.querySelector('.uo-block-title');
-            titleEl.addEventListener('pointerdown', e => {
-                e.stopPropagation();
-            });
-            titleEl.addEventListener('click', e => {
-                e.stopPropagation();
-                startInlineEdit(block.id, titleEl);
-            });
+            if (titleEl) {
+                titleEl.addEventListener('pointerdown', e => {
+                    e.stopPropagation(); // evita drag
+                });
 
-            // CONTEXT MENU — COLORE
+                titleEl.addEventListener('click', e => {
+                    e.stopPropagation();
+                    startInlineEdit(block.id, titleEl);
+                });
+            }
+
+            /* =========================
+               ADD STAFF (placeholder)
+            ========================= */
+            const staffAddBtn = el.querySelector('[data-staff-add]');
+            if (staffAddBtn) {
+                staffAddBtn.addEventListener('pointerdown', ev => {
+                    ev.preventDefault();
+                    ev.stopPropagation(); // evita drag
+                });
+
+                staffAddBtn.addEventListener('click', ev => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+
+                    openStaffDrawer(block.id, block.label);
+                });
+            }
+
+            // blocca drag quando si interagisce con +N
+            const staffMore = el.querySelector('[data-staff-more]');
+            if (staffMore) {
+                staffMore.addEventListener('pointerdown', ev => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                });
+            }
+
+
+
+            /* =========================
+               CONTEXT MENU — COLORE
+            ========================= */
             el.addEventListener('contextmenu', e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -392,6 +431,269 @@ document.addEventListener('DOMContentLoaded', () => {
 
             canvas.appendChild(el);
         });
+    }
+
+    function minutesToHHMM(totalMinutes) {
+        // supporta anche minuti > 1440 (multi-day)
+        const m = Math.max(0, Math.floor(totalMinutes));
+        const hh = Math.floor(m / 60) % 24;
+        const mm = m % 60;
+
+        const hStr = String(hh).padStart(2, '0');
+        const mStr = String(mm).padStart(2, '0');
+        return `${hStr}:${mStr}`;
+    }
+
+    // ===============================
+    // STAFF DRAWER — OPEN / CLOSE
+    // ===============================
+    const staffDrawer = document.getElementById('uo-staff-drawer');
+    const staffDrawerPanel = staffDrawer?.querySelector('.uo-staff-drawer__panel');
+
+    function openStaffDrawer(blockId, blockLabel = '') {
+        if (!staffDrawer) return;
+
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        activeBlockId = blockId;
+
+        // ===== TITOLO
+        const titleEl = document.getElementById('uo-staff-drawer-title');
+        if (titleEl) {
+            titleEl.textContent = `Staff — ${blockLabel || 'Blocco'}`;
+        }
+
+        // ===== ORARIO DINAMICO
+        const timeEl = document.getElementById('uo-staff-drawer-time');
+
+        if (timeEl) {
+            const unit = CONFIG.UNIT_MINUTES;
+            const axisStart =
+                cfg.axis_start_minutes ??
+                cfg.axis_start_slot * unit;
+
+            const startMinutes = axisStart + block.tStart;
+            const endMinutes = startMinutes + block.duration;
+
+            const startLabel = minutesToHHMM(startMinutes);
+            const endLabel = minutesToHHMM(endMinutes);
+
+            timeEl.textContent =
+                `${startLabel} → ${endLabel} • ${block.duration} min`;
+        }
+
+        staffDrawer.classList.remove('is-hidden');
+        staffDrawer.setAttribute('aria-hidden', 'false');
+    }
+
+
+    function closeStaffDrawer() {
+        if (!staffDrawer) return;
+
+        staffDrawer.classList.add('is-hidden');
+        staffDrawer.setAttribute('aria-hidden', 'true');
+    }
+
+    // -------------------------------
+    // CLOSE HANDLERS
+    // -------------------------------
+
+    // click su overlay o bottone X
+    document.addEventListener('click', (e) => {
+        if (!staffDrawer || staffDrawer.classList.contains('is-hidden')) return;
+
+        if (
+            e.target.matches('[data-close-staff-drawer]') ||
+            (e.target === staffDrawer && !staffDrawerPanel.contains(e.target))
+        ) {
+            closeStaffDrawer();
+        }
+    });
+
+    // ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeStaffDrawer();
+        }
+    });
+
+    // ===============================
+    // STAFF ACCORDION — OPEN / CLOSE
+    // ===============================
+    (function initStaffAccordion() {
+        const drawer = document.getElementById('uo-staff-drawer');
+        if (!drawer) return;
+
+        const trigger = drawer.querySelector('[data-staff-accordion-toggle]');
+        const panel = drawer.querySelector('[data-staff-accordion-panel]');
+
+        if (!trigger || !panel) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+
+            if (isOpen) {
+                // CLOSE
+                trigger.setAttribute('aria-expanded', 'false');
+                panel.hidden = true;
+            } else {
+                // OPEN
+                trigger.setAttribute('aria-expanded', 'true');
+                panel.hidden = false;
+            }
+        });
+    })();
+
+    async function fetchAccountStaff() {
+        const res = await fetch('/admin/staff', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+
+        if (!res.ok) throw new Error('Errore fetch staff');
+
+        return await res.json();
+    }
+    async function openStaffDrawer(block) {
+        const drawer = document.getElementById('uo-staff-drawer');
+        drawer.classList.remove('is-hidden');
+
+        const content = drawer.querySelector('.uo-accordion-content');
+        const countEl = drawer.querySelector('.uo-accordion-toggle .count');
+
+        content.innerHTML = 'Caricamento…';
+
+        try {
+            const staff = await fetchAccountStaff();
+
+            countEl.textContent = `(${staff.length})`;
+
+            content.innerHTML = staff.map(s => `
+      <div class="uo-staff-row" data-staff-id="${s.id}">
+        <div class="uo-staff-name">${s.name}</div>
+        ${s.role ? `<div class="uo-staff-role">${s.role}</div>` : ''}
+        <button class="uo-staff-assign">+</button>
+      </div>
+    `).join('');
+        } catch (e) {
+            content.innerHTML = '<div class="error">Errore caricamento staff</div>';
+        }
+    }
+    document.addEventListener('click', e => {
+        const toggle = e.target.closest('.uo-accordion-toggle');
+        if (!toggle) return;
+
+        toggle.classList.toggle('is-open');
+        toggle.nextElementSibling.classList.toggle('is-open');
+    });
+
+
+
+    function renderStaffStrip(block) {
+        const staff = Array.isArray(block.staff) ? block.staff : [];
+        const MAX_VISIBLE = 3;
+
+        // =========================
+        // STATO VUOTO
+        // =========================
+        if (staff.length === 0) {
+            return `
+          <div class="uo-block-staff-strip is-empty" data-staff-strip>
+            <span class="uo-staff-chip is-empty">
+              <span class="uo-staff-icon">👥</span>
+              <span class="uo-staff-count">0</span>
+              <button
+                type="button"
+                class="uo-staff-add"
+                data-staff-add
+                title="Aggiungi staff"
+              >+</button>
+            </span>
+          </div>
+        `;
+        }
+
+        // =========================
+        // STATO CON STAFF
+        // =========================
+        const visible = staff.slice(0, MAX_VISIBLE);
+        const extra = staff.length - MAX_VISIBLE;
+
+        const chips = visible.map(m => {
+            const isQuick = !!m.isQuick;
+            const role = (m.role || '').trim();
+            const badge = isQuick ? '⚡' : (role ? role : '');
+            const title = isQuick
+                ? `${m.name} ⚡`
+                : (role ? `${m.name} (${role})` : m.name);
+
+            return `
+          <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}"
+                title="${escapeHtml(title)}">
+            <span class="uo-staff-name">${escapeHtml(m.name)}</span>
+            ${badge ? `<span class="uo-staff-badge">${escapeHtml(badge)}</span>` : ''}
+          </span>
+        `;
+        }).join('');
+
+        // lista completa per hover su +N
+        const fullList = staff.map(m => {
+            const isQuick = !!m.isQuick;
+            const role = (m.role || '').trim();
+
+            return `
+          <div class="uo-staff-hover-item">
+            <span class="uo-staff-hover-name">${escapeHtml(m.name)}</span>
+            ${isQuick
+                    ? `<span class="uo-staff-hover-badge">⚡</span>`
+                    : (role
+                        ? `<span class="uo-staff-hover-badge">${escapeHtml(role)}</span>`
+                        : '')
+                }
+          </div>
+        `;
+        }).join('');
+
+        const more = extra > 0
+            ? `
+          <span class="uo-staff-more" data-staff-more>
+            +${extra}
+            <span class="uo-staff-hover">
+              ${fullList}
+            </span>
+          </span>
+        `
+            : '';
+
+        return `
+      <div class="uo-block-staff-strip" data-staff-strip>
+        ${chips}
+        ${more}
+        <button
+          type="button"
+          class="uo-staff-add"
+          data-staff-add
+          title="Aggiungi staff"
+        >+</button>
+      </div>
+    `;
+    }
+
+
+    // helper semplice per evitare XSS nei title / html
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
     }
 
 
