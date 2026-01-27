@@ -11,14 +11,20 @@ use Illuminate\Support\Facades\Auth;
 class EventStaffController extends Controller
 {
 
- public function index()
-    {
-        return Auth::user()
-            ->staff() // relazione
-            ->select('id', 'name', 'role')
-            ->orderBy('name')
-            ->get();
-    }
+public function index()
+{
+    return Auth::user()
+        ->staffProfile()
+        ->select('id', 'stage_name', 'skills')
+        ->orderBy('stage_name')
+        ->get();
+}
+
+
+public function staff()
+{
+    return $this->staffProfile();
+}
 
 
 

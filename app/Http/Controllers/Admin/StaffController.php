@@ -11,7 +11,7 @@ class StaffController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:manage-staff');
+        $this->middleware('can:manage-staff')->except(['json']);
     }
 
     public function index()
@@ -51,7 +51,8 @@ class StaffController extends Controller
         }
 
         StaffProfile::create([
-            'user_id'    => Auth::id(),  // FIX
+            'account_id' => Auth::id(),
+            'user_id'    => Auth::id(),
             'stage_name' => $data['stage_name'],
             'role'       => $data['role'],
             'phone'      => $data['phone'] ?? null,
@@ -127,5 +128,18 @@ class StaffController extends Controller
         ->route('admin.staff.index')
         ->with('success', 'Profilo staff rimosso.');
 }
+
+public function json()
+{
+    abort_unless(request()->expectsJson(), 404);
+
+    return response()->json(
+        StaffProfile::where('user_id', Auth::id())
+            ->orderBy('stage_name')
+            ->get(['id', 'stage_name', 'skills'])
+    );
+}
+
+
 
 }

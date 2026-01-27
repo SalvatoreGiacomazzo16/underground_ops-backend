@@ -102,6 +102,11 @@ Route::middleware(['auth'])
         Route::resource('staff', StaffController::class)
             ->except(['show']);
 
+
+            Route::get('staff/json', [StaffController::class, 'json'])
+    ->name('staff.json');
+
+
         /*
         |--------------------------------------------------------------------------
         | LOCATION CRUD
@@ -141,7 +146,3 @@ if (app()->environment('local')) {
 |--------------------------------------------------------------------------
 */
 Route::fallback(fn () => response()->view('pages.not-found', [], 404));
-
-Route::get('/admin/staff', [EventStaffController::class, 'index'])
-    ->middleware('auth')
-    ->name('admin.staff.index');

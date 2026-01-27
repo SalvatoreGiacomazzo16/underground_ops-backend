@@ -674,3 +674,71 @@
     opacity: 0.5;
     padding: 6px 0;
 }
+
+.uo-staff-account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.uo-staff-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+    border-radius: 8px;
+
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+
+    cursor: pointer;
+    transition: all .15s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(201, 22, 154, 0.4);
+    }
+}
+
+.uo-staff-name {
+    flex: 1;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: .2px;
+}
+
+
+.uo-staff-role {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+}
+
+.uo-staff-assign {
+    width: 28px;
+    height: 28px;
+
+    border-radius: 50%;
+    border: 1px solid rgba(201, 22, 154, 0.6);
+
+    background: transparent;
+    color: #C9169A;
+
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 600;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    transition: all .15s ease;
+
+    &:hover {
+        background: #C9169A;
+        color: #000;
+        transform: scale(1.05);
+    }
+}

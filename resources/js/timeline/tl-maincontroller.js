@@ -447,6 +447,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===============================
     // STAFF DRAWER — OPEN / CLOSE
     // ===============================
+    async function fetchAccountStaff() {
+
+
+        const res = await fetch('/admin/staff/json', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Fetch staff failed (${res.status}): ${text.slice(0, 200)}`);
+        }
+
+        return await res.json();
+
+
+    }
+
+
+
     const staffDrawer = document.getElementById('uo-staff-drawer');
     const staffDrawerPanel = staffDrawer?.querySelector('.uo-staff-drawer__panel');
 
@@ -458,33 +480,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
         activeBlockId = blockId;
 
-        // ===== TITOLO
+        // =========================
+        // TITOLO
+        // =========================
         const titleEl = document.getElementById('uo-staff-drawer-title');
         if (titleEl) {
             titleEl.textContent = `Staff — ${blockLabel || 'Blocco'}`;
         }
 
-        // ===== ORARIO DINAMICO
+        // =========================
+        // ORARIO DINAMICO
+        // =========================
         const timeEl = document.getElementById('uo-staff-drawer-time');
-
         if (timeEl) {
             const unit = CONFIG.UNIT_MINUTES;
             const axisStart =
-                cfg.axis_start_minutes ??
-                cfg.axis_start_slot * unit;
+                CONFIG.axis_start_minutes ??
+                (CONFIG.axis_start_slot * unit);
 
             const startMinutes = axisStart + block.tStart;
             const endMinutes = startMinutes + block.duration;
 
-            const startLabel = minutesToHHMM(startMinutes);
-            const endLabel = minutesToHHMM(endMinutes);
-
             timeEl.textContent =
-                `${startLabel} → ${endLabel} • ${block.duration} min`;
+                `${minutesToHHMM(startMinutes)} → ${minutesToHHMM(endMinutes)} • ${block.duration} min`;
         }
 
+        // =========================
+        // APERTURA DRAWER
+        // =========================
         staffDrawer.classList.remove('is-hidden');
-        staffDrawer.setAttribute('aria-hidden', 'false');
+        staffDrawer.removeAttribute('inert');
+
+        // =========================
+        // STEP 2C — POPOLA ACCORDION STAFF ACCOUNT
+        // =========================
+        const accountListEl = staffDrawer.querySelector('.uo-staff-account-list');
+        const countEl = staffDrawer.querySelector('.uo-staff-accordion-count');
+
+        if (!accountListEl || !countEl) {
+            console.warn('Staff drawer: elementi DOM mancanti');
+            return;
+        }
+
+        // Stato iniziale
+        accountListEl.innerHTML = `
+        <div class="uo-staff-account-empty text-white">
+            Caricamento staff…
+        </div>
+    `;
+        countEl.textContent = '(…)';
+
+        // Fetch + render
+        fetchAccountStaff()
+            .then(staff => {
+                countEl.textContent = `(${staff.length})`;
+
+                if (!staff.length) {
+                    accountListEl.innerHTML = `
+                    <div class="uo-staff-account-empty text-white">
+                        Nessuno staff disponibile per questo account
+                    </div>
+                `;
+                    return;
+                }
+
+                accountListEl.innerHTML = staff.map(s => `
+                <div class="uo-staff-row" data-staff-id="${s.id}">
+                    <span class="uo-staff-name">${s.stage_name ?? ''}</span>
+                    ${Array.isArray(s.skills) && s.skills.length
+                        ? `<span class="uo-staff-role">${s.skills.join(', ')}</span>`
+                        : ''
+                    }
+                    <button
+                        type="button"
+                        class="uo-staff-assign"
+                        title="Assegna"
+                    >
+                        +
+                    </button>
+                </div>
+            `).join('');
+            })
+            .catch(err => {
+                console.error('Errore fetchAccountStaff:', err);
+                countEl.textContent = '(!)';
+                accountListEl.innerHTML = `
+                <div class="uo-staff-account-empty text-white">
+                    Errore caricamento staff
+                </div>
+            `;
+            });
     }
 
 
@@ -492,8 +577,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!staffDrawer) return;
 
         staffDrawer.classList.add('is-hidden');
-        staffDrawer.setAttribute('aria-hidden', 'true');
+        staffDrawer.setAttribute('inert', '');
     }
+
 
     // -------------------------------
     // CLOSE HANDLERS
@@ -548,43 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-    async function fetchAccountStaff() {
-        const res = await fetch('/admin/staff', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        });
 
-        if (!res.ok) throw new Error('Errore fetch staff');
 
-        return await res.json();
-    }
-    async function openStaffDrawer(block) {
-        const drawer = document.getElementById('uo-staff-drawer');
-        drawer.classList.remove('is-hidden');
-
-        const content = drawer.querySelector('.uo-accordion-content');
-        const countEl = drawer.querySelector('.uo-accordion-toggle .count');
-
-        content.innerHTML = 'Caricamento…';
-
-        try {
-            const staff = await fetchAccountStaff();
-
-            countEl.textContent = `(${staff.length})`;
-
-            content.innerHTML = staff.map(s => `
-      <div class="uo-staff-row" data-staff-id="${s.id}">
-        <div class="uo-staff-name">${s.name}</div>
-        ${s.role ? `<div class="uo-staff-role">${s.role}</div>` : ''}
-        <button class="uo-staff-assign">+</button>
-      </div>
-    `).join('');
-        } catch (e) {
-            content.innerHTML = '<div class="error">Errore caricamento staff</div>';
-        }
-    }
     document.addEventListener('click', e => {
         const toggle = e.target.closest('.uo-accordion-toggle');
         if (!toggle) return;

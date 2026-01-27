@@ -6,7 +6,6 @@
 <div
     id="uo-staff-drawer"
     class="uo-staff-drawer is-hidden"
-    aria-hidden="true"
 >
     {{-- OVERLAY --}}
     <div

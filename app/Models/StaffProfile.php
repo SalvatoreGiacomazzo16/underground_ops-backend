@@ -10,9 +10,10 @@ class StaffProfile extends Model
     use HasFactory;
 
     protected $fillable = [
+        'account_id',
         'user_id',
         'stage_name',
-        'role',       // 🆕 NUOVO CAMPO
+        'role',
         'phone',
         'bio',
         'skills',
