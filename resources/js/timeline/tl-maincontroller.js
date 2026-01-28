@@ -15,10 +15,12 @@ import { TimelineRepository } from './tl-storage.js';
 import { injectStyles } from './tl-style.js';
 
 import {
-    renderStaffRow,
+
     generateTimeSlots,
     renderEventRangeFromSlots
 } from './tl-ui-comp.js';
+
+
 
 
 
@@ -276,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         block.color = color;
         TimelineRepository.save(blocks);
         renderBlocks();
+        updateStaffOverflow();
     }
 
     document.addEventListener('pointerdown', (e) => {
@@ -335,32 +338,32 @@ document.addEventListener('DOMContentLoaded', () => {
             // markup
             el.innerHTML = `
             <button
-                class="uo-block-delete"
-                type="button"
-                title="Elimina blocco"
-                aria-label="Elimina blocco"
-                data-delete-block
+            class="uo-block-delete"
+            type="button"
+            title="Elimina blocco"
+            aria-label="Elimina blocco"
+            data-delete-block
             >
-                ×
+            ×
             </button>
 
             <div class="uo-block-main">
                 <div class="uo-block-title">
-                    ${block.label || 'SENZA TITOLO'}
+                ${block.label || 'SENZA TITOLO'}
                 </div>
 
                 <div class="uo-block-duration">
-                    ${safeDuration} min
+                ${safeDuration} min
                 </div>
-            </div>
+                </div>
 
-            ${renderStaffStrip(block)}
+                ${renderStaffStrip(block)}
 
-            <div class="uo-resizer" title="Ridimensiona"></div>
-        `;
+                <div class="uo-resizer" title="Ridimensiona"></div>
+                `;
 
             /* =========================
-               DELETE
+            DELETE
             ========================= */
             const delBtn = el.querySelector('[data-delete-block]');
             if (delBtn) {
@@ -377,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             /* =========================
-               INLINE EDIT TITOLO
+            INLINE EDIT TITOLO
             ========================= */
             const titleEl = el.querySelector('.uo-block-title');
             if (titleEl) {
@@ -392,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             /* =========================
-               ADD STAFF (placeholder)
+            ADD STAFF (placeholder)
             ========================= */
             const staffAddBtn = el.querySelector('[data-staff-add]');
             if (staffAddBtn) {
@@ -421,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             /* =========================
-               CONTEXT MENU — COLORE
+            CONTEXT MENU — COLORE
             ========================= */
             el.addEventListener('contextmenu', e => {
                 e.preventDefault();
@@ -444,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${hStr}:${mStr}`;
     }
 
+    let accountStaffCache = [];
     // ===============================
     // STAFF DRAWER — OPEN / CLOSE
     // ===============================
@@ -494,9 +498,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeEl = document.getElementById('uo-staff-drawer-time');
         if (timeEl) {
             const unit = CONFIG.UNIT_MINUTES;
+
             const axisStart =
-                CONFIG.axis_start_minutes ??
-                (CONFIG.axis_start_slot * unit);
+                cfg.axis_start_minutes ??
+                (cfg.axis_start_slot * unit) ??
+                0;
 
             const startMinutes = axisStart + block.tStart;
             const endMinutes = startMinutes + block.duration;
@@ -504,6 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timeEl.textContent =
                 `${minutesToHHMM(startMinutes)} → ${minutesToHHMM(endMinutes)} • ${block.duration} min`;
         }
+
 
         // =========================
         // APERTURA DRAWER
@@ -533,44 +540,56 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch + render
         fetchAccountStaff()
             .then(staff => {
-                countEl.textContent = `(${staff.length})`;
+                accountStaffCache = Array.isArray(staff) ? staff : [];
 
-                if (!staff.length) {
+                countEl.textContent = `(${accountStaffCache.length})`;
+
+                if (!accountStaffCache.length) {
                     accountListEl.innerHTML = `
-                    <div class="uo-staff-account-empty text-white">
-                        Nessuno staff disponibile per questo account
-                    </div>
-                `;
+              <div class="uo-staff-account-empty text-white">
+                  Nessuno staff disponibile per questo account
+              </div>
+          `;
                     return;
                 }
 
-                accountListEl.innerHTML = staff.map(s => `
-                <div class="uo-staff-row" data-staff-id="${s.id}">
-                    <span class="uo-staff-name">${s.stage_name ?? ''}</span>
-                    ${Array.isArray(s.skills) && s.skills.length
-                        ? `<span class="uo-staff-role">${s.skills.join(', ')}</span>`
-                        : ''
+                accountListEl.innerHTML = accountStaffCache.map(s => `
+          <div class="uo-staff-row" data-staff-id="${s.id}">
+              <div class="uo-staff-main">
+                  <span class="uo-staff-name">
+                      ${s.stage_name ?? ''}
+                      ${s.role
+                        ? `<span class="uo-staff-role-inline"> (${s.role})</span>`
+                        : (
+                            Array.isArray(s.skills) && s.skills.length
+                                ? `<span class="uo-staff-role-inline"> (${s.skills.join(', ')})</span>`
+                                : ''
+                        )
                     }
-                    <button
-                        type="button"
-                        class="uo-staff-assign"
-                        title="Assegna"
-                    >
-                        +
-                    </button>
-                </div>
-            `).join('');
+                  </span>
+              </div>
+
+              <button
+                  type="button"
+                  class="uo-staff-assign"
+                  title="Assegna"
+                  data-staff-id="${s.id}"
+              >+</button>
+          </div>
+      `).join('');
             })
             .catch(err => {
                 console.error('Errore fetchAccountStaff:', err);
+                accountStaffCache = [];
                 countEl.textContent = '(!)';
                 accountListEl.innerHTML = `
-                <div class="uo-staff-account-empty text-white">
-                    Errore caricamento staff
-                </div>
-            `;
+          <div class="uo-staff-account-empty text-white">
+              Errore caricamento staff
+          </div>
+      `;
             });
     }
+
 
 
     function closeStaffDrawer() {
@@ -579,6 +598,129 @@ document.addEventListener('DOMContentLoaded', () => {
         staffDrawer.classList.add('is-hidden');
         staffDrawer.setAttribute('inert', '');
     }
+
+    function addQuickStaffToActiveBlock(name) {
+        if (!activeBlockId) return;
+
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+
+        block.staff = Array.isArray(block.staff) ? block.staff : [];
+
+        // ❌ evita duplicati (case-insensitive) SOLO quick
+        const exists = block.staff.some(
+            s => s.isQuick && String(s.name).toLowerCase() === name.toLowerCase()
+        );
+        if (exists) return;
+
+        block.staff.push({
+            id: `quick_${Date.now()}`,
+            name,
+            role: '',
+            isQuick: true
+        });
+
+        TimelineRepository.save(blocks);
+        rerenderBlockStaff(block.id);
+    }
+
+
+    const quickInput = staffDrawer.querySelector('[data-staff-quick-input]');
+    const quickAddBtn = staffDrawer.querySelector('[data-staff-quick-add]');
+
+    if (quickAddBtn && quickInput) {
+        quickAddBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const name = quickInput.value.trim();
+
+            // ❌ validazioni
+            if (name.length < 3) {
+                quickInput.classList.add('is-error');
+                return;
+            }
+
+            quickInput.classList.remove('is-error');
+
+            addQuickStaffToActiveBlock(name);
+
+            quickInput.value = '';
+        };
+    }
+
+
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.uo-staff-assign');
+        if (!btn) return;
+
+        const staffId =
+            Number(btn.dataset.staffId) ||
+            Number(btn.closest('.uo-staff-row')?.dataset.staffId);
+
+        if (!staffId) return;
+
+        handleAssignStaffFromDb(staffId);
+    });
+
+
+    function handleAssignStaffFromDb(staffId) {
+        if (!activeBlockId) return;
+
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+
+        block.staff = Array.isArray(block.staff) ? block.staff : [];
+
+        // prende dallo stesso array usato per renderizzare l’accordion
+        const staff = accountStaffCache.find(s => Number(s.id) === Number(staffId));
+        if (!staff) return;
+
+        // ❌ evita duplicati (DB)
+        const alreadyExists = block.staff.some(m => !m.isQuick && Number(m.id) === Number(staff.id));
+        if (alreadyExists) return;
+
+        block.staff.push({
+            id: staff.id,
+            name: staff.stage_name ?? '',
+            role: staff.role ?? '',
+            isQuick: false,
+        });
+
+        TimelineRepository.save(blocks);
+        rerenderBlockStaff(block.id);
+    }
+
+
+
+    function rerenderBlockStaff(blockId) {
+        const blockEl = document.querySelector(`.uo-timeline-block[data-block-id="${blockId}"]`);
+        if (!blockEl) return;
+
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        // 1) preferito: strip con data attr
+        let staffContainer = blockEl.querySelector('[data-staff-strip]');
+
+        // 2) fallback: vecchio container staff (se usi class diversa)
+        if (!staffContainer) {
+            staffContainer = blockEl.querySelector('.uo-block-staff-strip');
+        }
+
+        if (!staffContainer) {
+            console.warn('rerenderBlockStaff: staff strip non trovata nel DOM');
+            return;
+        }
+
+        staffContainer.outerHTML = renderStaffStrip(block);
+
+        // se hai overflow logic
+        if (typeof updateStaffOverflow === 'function') {
+            updateStaffOverflow();
+        }
+    }
+
 
 
     // -------------------------------
@@ -648,7 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStaffStrip(block) {
         const staff = Array.isArray(block.staff) ? block.staff : [];
-        const MAX_VISIBLE = 3;
 
         // =========================
         // STATO VUOTO
@@ -657,7 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
           <div class="uo-block-staff-strip is-empty" data-staff-strip>
             <span class="uo-staff-chip is-empty">
-              <span class="uo-staff-icon">👥</span>
+              <span class="uo-staff-icon">👥STAFF:</span>
               <span class="uo-staff-count">0</span>
               <button
                 type="button"
@@ -673,10 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // =========================
         // STATO CON STAFF
         // =========================
-        const visible = staff.slice(0, MAX_VISIBLE);
-        const extra = staff.length - MAX_VISIBLE;
-
-        const chips = visible.map(m => {
+        const chips = staff.map(m => {
             const isQuick = !!m.isQuick;
             const role = (m.role || '').trim();
             const badge = isQuick ? '⚡' : (role ? role : '');
@@ -693,39 +831,13 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         }).join('');
 
-        // lista completa per hover su +N
-        const fullList = staff.map(m => {
-            const isQuick = !!m.isQuick;
-            const role = (m.role || '').trim();
-
-            return `
-          <div class="uo-staff-hover-item">
-            <span class="uo-staff-hover-name">${escapeHtml(m.name)}</span>
-            ${isQuick
-                    ? `<span class="uo-staff-hover-badge">⚡</span>`
-                    : (role
-                        ? `<span class="uo-staff-hover-badge">${escapeHtml(role)}</span>`
-                        : '')
-                }
-          </div>
-        `;
-        }).join('');
-
-        const more = extra > 0
-            ? `
-          <span class="uo-staff-more" data-staff-more>
-            +${extra}
-            <span class="uo-staff-hover">
-              ${fullList}
-            </span>
-          </span>
-        `
-            : '';
-
         return `
       <div class="uo-block-staff-strip" data-staff-strip>
         ${chips}
-        ${more}
+
+        <!-- placeholder +x (calcolato DOPO) -->
+        <span class="uo-staff-more is-hidden" data-staff-more></span>
+
         <button
           type="button"
           class="uo-staff-add"
@@ -735,6 +847,54 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
     }
+
+    function updateStaffOverflow() {
+        document.querySelectorAll('[data-staff-strip]').forEach(strip => {
+            const chipsWrap = strip.querySelector('[data-staff-chips]');
+            const chips = Array.from(chipsWrap?.children || []);
+            const moreEl = strip.querySelector('[data-staff-more]');
+
+            if (!chipsWrap || !moreEl) return;
+
+            // reset
+            chips.forEach(c => c.classList.remove('is-hidden'));
+            moreEl.classList.add('is-hidden');
+            moreEl.innerHTML = '';
+
+            const maxWidth = chipsWrap.clientWidth * 0.8; // 🔑 soglia 80%
+            let used = 0;
+            let hiddenCount = 0;
+
+            for (const chip of chips) {
+                const w = chip.offsetWidth + 6; // gap stimato
+                if (used + w <= maxWidth) {
+                    used += w;
+                } else {
+                    chip.classList.add('is-hidden');
+                    hiddenCount++;
+                }
+            }
+
+            if (hiddenCount > 0) {
+                moreEl.textContent = `+${hiddenCount}`;
+                moreEl.classList.remove('is-hidden');
+
+                // hover list
+                moreEl.innerHTML = `
+        +${hiddenCount}
+        <span class="uo-staff-hover">
+          ${chips
+                        .filter(c => c.classList.contains('is-hidden'))
+                        .map(c => `<div class="uo-staff-hover-item">${c.textContent}</div>`)
+                        .join('')}
+        </span>
+      `;
+            }
+        });
+    }
+
+
+
 
 
     // helper semplice per evitare XSS nei title / html
@@ -754,6 +914,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeBlockId = null;
         TimelineRepository.save(blocks);
         renderBlocks();
+        updateStaffOverflow();
     }
     function openBlockContextMenu({ x, y, blockId }) {
         closeContextMenus();
@@ -789,58 +950,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------
-    // Staff Add Logic
-    // ----------------
-    function handleAddStaff(blockId) {
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
-
-        block.staff.push({
-            id: `quick_${Date.now()}`,
-            name: 'STAFF',
-            role: null,
-            isQuick: true
-        });
-
-        TimelineRepository.save(blocks);
-        renderBlocks();
-    }
-
-    function startStaffInlineEdit(blockId, staffId, chipEl) {
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
-
-        const staff = block.staff.find(s => s.id === staffId && s.isQuick);
-        if (!staff) return;
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = staff.name;
-        input.className = 'uo-staff-input';
-
-        chipEl.replaceWith(input);
-
-        requestAnimationFrame(() => {
-            input.focus();
-            input.select();
-        });
-
-        const save = () => {
-            const val = input.value.trim();
-            staff.name = val || 'STAFF';
-            TimelineRepository.save(blocks);
-            renderBlocks();
-        };
-
-        input.addEventListener('blur', save);
-        input.addEventListener('keydown', e => {
-            if (e.key === 'Enter') input.blur();
-            e.stopPropagation();
-        });
-        input.addEventListener('pointerdown', e => e.stopPropagation());
-    }
-
-    // ----------------
     // Inline Editing Logic (Block Label)
     // ----------------
     function startInlineEdit(blockId, labelEl) {
@@ -871,6 +980,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 TimelineRepository.save(blocks);
             }
             renderBlocks();
+            updateStaffOverflow();
         };
 
         input.addEventListener('blur', save);
@@ -1173,6 +1283,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         TimelineRepository.save(blocks);
         renderBlocks();
+        updateStaffOverflow();
     });
 
 
@@ -1226,6 +1337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeElement = null;
 
         renderBlocks();
+        updateStaffOverflow();
 
         if (lastClientY !== null) updateGhostPosition(lastClientY);
 
@@ -1236,4 +1348,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // First render
     // ----------------
     renderBlocks();
+    updateStaffOverflow();
 });

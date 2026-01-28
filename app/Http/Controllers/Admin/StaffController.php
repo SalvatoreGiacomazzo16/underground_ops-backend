@@ -136,9 +136,10 @@ public function json()
     return response()->json(
         StaffProfile::where('user_id', Auth::id())
             ->orderBy('stage_name')
-            ->get(['id', 'stage_name', 'skills'])
+            ->get(['id', 'stage_name', 'role', 'skills'])
     );
 }
+
 
 
 
