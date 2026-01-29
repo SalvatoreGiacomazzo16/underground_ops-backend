@@ -126,44 +126,6 @@
     transform: translateY(-1px);
 }
 
-/* ============================
-   TIMELINE BLOCK — DELETE BTN
-============================ */
-
-.uo-delete-btn {
-    width: 22px;
-    height: 22px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1;
-
-    border-radius: 6px;
-
-    background: rgba(0, 0, 0, 0.45);
-    color: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-
-    cursor: pointer;
-    transition: all .15s ease;
-
-    opacity: 0.75;
-
-    pointer-events: auto;
-}
-
-.uo-delete-btn:hover {
-    background: rgba(120, 0, 0, 0.85);
-    color: #fff;
-    border-color: rgba(255, 80, 80, 0.95);
-    box-shadow: 0 0 8px rgba(255, 60, 60, 0.6);
-    transform: scale(1.05);
-    opacity: 1;
-}
 
 /* ============================
    CONTEXT MENU (COLOR PICKER)
@@ -218,6 +180,7 @@
 /* Il blocco è il vero owner del context menu */
 .uo-timeline-block {
     pointer-events: auto;
+    overflow: visible;
 }
 
 /* ============================
@@ -300,16 +263,22 @@
     opacity: 0.85;
 }
 
+
 .uo-block-staff-strip {
-    margin-top: 8px;
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: nowrap;
-    min-height: 22px;
-    pointer-events: auto;
-    min-width: 100px;
-    max-width: 100%;
+    position: relative;
+    margin-top: 8px;
+
+    /* 🔑 spazio riservato alle actions */
+    padding-right: 80px;
+
+    white-space: nowrap;
+    overflow: visible;
+
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .uo-block-staff-strip.is-empty .uo-staff-empty {
@@ -322,15 +291,29 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(0, 0, 0, 0.20);
-    font-size: 12px;
-    white-space: nowrap;
-    min-height: 30px;
 
+    padding: 4px 10px;
+    height: 26px;
+
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    transition: all .15s ease;
 }
+
+.uo-staff-chip:hover {
+    border-color: rgba(120, 210, 255, 0.9);
+    box-shadow: 0 0 8px rgba(120, 210, 255, 0.45);
+}
+
 
 .uo-staff-chip.is-quick {
     border-color: rgba(201, 22, 154, 0.45);
@@ -394,23 +377,41 @@
     border-color: rgba(201, 22, 154, 0.45);
 }
 
+/* =====================================================
+   +X MORE (anchor)
+===================================================== */
+
 .uo-staff-more {
     position: relative;
-    font-size: 12px;
-    opacity: 0.9;
-    padding: 3px 8px;
+    /* 🔑 anchor dell’hover */
+    flex-shrink: 0;
+
+    padding: 2px 8px;
     border-radius: 6px;
-    border: 1px dashed rgba(255, 255, 255, 0.22);
-    background: rgba(0, 0, 0, 0.18);
+
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+
     cursor: default;
+    z-index: $z-navbar-toggle;
+    /* 🔑 sopra la strip */
 }
 
-/* hover list */
+/* =====================================================
+   HOVER LIST — DEVE BUCARE L’OVERFLOW
+===================================================== */
+
 .uo-staff-hover {
     position: absolute;
     left: 0;
     top: calc(100% + 6px);
-    min-width: 190px;
+
+    min-width: 180px;
     max-width: 240px;
 
     background: rgba(8, 8, 10, 0.96);
@@ -421,22 +422,31 @@
     opacity: 0;
     transform: translateY(-4px);
     pointer-events: none;
-    transition: opacity .15s ease, transform .15s ease;
-    z-index: 80;
+
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: $z-debug;
+    /* 🔑 SOPRA TUTTO */
 }
 
+/* attivazione hover */
 .uo-staff-more:hover .uo-staff-hover {
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
+
+/* =====================================================
+   ITEM LIST
+===================================================== */
 
 .uo-staff-hover-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+
+    gap: 8px;
     padding: 4px 6px;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .uo-staff-hover-item:hover {
@@ -446,6 +456,7 @@
 .uo-staff-hover-name {
     font-size: 12px;
     opacity: 0.95;
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -455,6 +466,7 @@
     font-size: 11px;
     opacity: 0.85;
 }
+
 
 /* ======================================================
    STAFF DRAWER — Global Overlay
@@ -741,4 +753,119 @@
         color: #000;
         transform: scale(1.05);
     }
+}
+
+/* =========================
+   BLOCK ACTIONS (TOP RIGHT)
+========================= */
+
+.uo-block-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    white-space: nowrap;
+    z-index: 5;
+}
+
+
+.uo-block-actions button {
+    all: unset;
+
+    height: 28px;
+    min-width: 28px;
+    padding: 0 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    border-radius: 8px;
+    cursor: pointer;
+
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+
+    transition: all .15s ease;
+}
+
+
+.uo-block-add {
+    color: #78d2ff;
+    border-color: rgba(120, 210, 255, 0.55);
+}
+
+.uo-block-add:hover {
+    background: rgba(120, 210, 255, 0.18);
+    border-color: rgba(120, 210, 255, 0.95);
+    box-shadow: 0 0 10px rgba(120, 210, 255, 0.55);
+}
+
+.uo-block-delete {
+    width: 28px;
+    padding: 0;
+
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.uo-block-delete:hover {
+    background: rgba(255, 60, 60, 0.85);
+    border-color: rgba(255, 80, 80, 1);
+    box-shadow: 0 0 10px rgba(255, 60, 60, 0.6);
+}
+
+
+.uo-block--s .uo-staff-chip {
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+
+/* =========================
+   BLOCCO SMALL (60 min)
+========================= */
+
+.uo-block--s {
+    padding-bottom: 0;
+    overflow: visible; // 🔑 niente respiro extra
+}
+
+
+.uo-block--s .uo-staff-chip {
+    font-size: 10px;
+    padding: 1px 5px;
+    height: 18px;
+}
+
+.uo-block--s .uo-block-main {
+    margin-bottom: 4px;
+}
+
+.uo-block--s .uo-block-staff-strip {
+    margin-top: 4px;
+    height: 22px; // 🔑 ALTEZZA FISSA
+    max-height: 22px;
+    overflow: hidden; // 🔑 non cresce MAI
+}
+
+
+.uo-staff-more {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    opacity: 0.85;
+    background: rgba(0, 0, 0, .25);
+    border: 1px dashed rgba(255, 255, 255, .25);
 }

@@ -335,17 +335,32 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (height >= 160) sizeClass = 'uo-block--l';
             el.classList.add(sizeClass);
 
+            // dopo aver deciso sizeClass
+            block.__size =
+                sizeClass === 'uo-block--s' ? 's' :
+                    sizeClass === 'uo-block--l' ? 'l' : 'm';
+
+
             // markup
             el.innerHTML = `
-            <button
-            class="uo-block-delete"
-            type="button"
-            title="Elimina blocco"
-            aria-label="Elimina blocco"
-            data-delete-block
-            >
-            ×
-            </button>
+        <div class="uo-block-actions">
+        <button
+          class="uo-block-add"
+          type="button"
+          title="Aggiungi staff"
+          data-staff-add
+        >+ Staff</button>
+
+        <button
+        class="uo-block-delete"
+        type="button"
+        title="Elimina blocco"
+        data-delete-block
+        >×</button>
+
+
+</div>
+
 
             <div class="uo-block-main">
                 <div class="uo-block-title">
@@ -787,66 +802,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
     function renderStaffStrip(block) {
         const staff = Array.isArray(block.staff) ? block.staff : [];
+        const MAX_VISIBLE = 7;
 
         // =========================
         // STATO VUOTO
         // =========================
         if (staff.length === 0) {
             return `
-          <div class="uo-block-staff-strip is-empty" data-staff-strip>
+        <div class="uo-block-staff-strip is-empty" data-staff-strip>
             <span class="uo-staff-chip is-empty">
-              <span class="uo-staff-icon">👥STAFF:</span>
-              <span class="uo-staff-count">0</span>
-              <button
-                type="button"
-                class="uo-staff-add"
-                data-staff-add
-                title="Aggiungi staff"
-              >+</button>
+                <span class="uo-staff-icon">👥</span>
+                <span class="uo-staff-count">STAFF: 0</span>
             </span>
-          </div>
+        </div>
         `;
         }
 
+        const visibleStaff = staff.slice(0, MAX_VISIBLE);
+        const hiddenStaff = staff.slice(MAX_VISIBLE);
+        const hiddenCount = hiddenStaff.length;
+
         // =========================
-        // STATO CON STAFF
+        // CHIP VISIBILI
         // =========================
-        const chips = staff.map(m => {
+        const chips = visibleStaff.map(m => {
             const isQuick = !!m.isQuick;
-            const role = (m.role || '').trim();
-            const badge = isQuick ? '⚡' : (role ? role : '');
-            const title = isQuick
-                ? `${m.name} ⚡`
-                : (role ? `${m.name} (${role})` : m.name);
 
             return `
-          <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}"
-                title="${escapeHtml(title)}">
+        <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}">
             <span class="uo-staff-name">${escapeHtml(m.name)}</span>
-            ${badge ? `<span class="uo-staff-badge">${escapeHtml(badge)}</span>` : ''}
-          </span>
+            ${isQuick ? `<span class="uo-staff-badge">⚡</span>` : ''}
+        </span>
         `;
         }).join('');
 
+        // =========================
+        // +X CON HOVER LIST
+        // =========================
+        const more = hiddenCount > 0 ? `
+        <span class="uo-staff-more">
+            +${hiddenCount}
+
+            <div class="uo-staff-hover">
+                ${hiddenStaff.map(m => `
+                    <div class="uo-staff-hover-item">
+                        <span class="uo-staff-hover-name">
+                            ${escapeHtml(m.name)}
+                        </span>
+                        ${m.isQuick
+                ? `<span class="uo-staff-hover-badge">⚡</span>`
+                : m.role
+                    ? `<span class="uo-staff-hover-badge">${escapeHtml(m.role)}</span>`
+                    : ''
+            }
+                    </div>
+                `).join('')}
+            </div>
+        </span>
+    ` : '';
+
         return `
-      <div class="uo-block-staff-strip" data-staff-strip>
+    <div class="uo-block-staff-strip" data-staff-strip>
         ${chips}
-
-        <!-- placeholder +x (calcolato DOPO) -->
-        <span class="uo-staff-more is-hidden" data-staff-more></span>
-
-        <button
-          type="button"
-          class="uo-staff-add"
-          data-staff-add
-          title="Aggiungi staff"
-        >+</button>
-      </div>
+        ${more}
+    </div>
     `;
     }
+
+
+
 
     function updateStaffOverflow() {
         document.querySelectorAll('[data-staff-strip]').forEach(strip => {

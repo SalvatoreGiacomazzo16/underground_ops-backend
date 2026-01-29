@@ -63,19 +63,7 @@
                 Nessuno staff assegnato a questo blocco
             </div>
 
-            {{--
-            <div class="uo-staff-row is-assigned">
-                <span class="uo-staff-name">Marco</span>
-                <span class="uo-staff-role">fonico</span>
-                <button class="uo-staff-remove" title="Rimuovi">×</button>
-            </div>
 
-            <div class="uo-staff-row is-quick">
-                <span class="uo-staff-name">Luca</span>
-                <span class="uo-staff-badge">⚡</span>
-                <button class="uo-staff-remove">×</button>
-            </div>
-            --}}
         </div>
     </div>
 
