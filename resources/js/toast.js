@@ -31,4 +31,6 @@ window.toast = function (
     if (duration > 0) {
         setTimeout(close, duration);
     }
+
+
 };

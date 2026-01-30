@@ -13,6 +13,10 @@ export function minutesToPixels(minutes) {
     return (minutes / CONFIG.UNIT_MINUTES) * CONFIG.SLOT_HEIGHT;
 }
 
+export function pixelsToMinutes(px) {
+    return (px / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+}
+
 
 export function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);

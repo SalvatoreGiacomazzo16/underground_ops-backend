@@ -6,6 +6,7 @@ import { CONFIG, NEON_PALETTE } from './tl-config.js';
 import {
     snapToUnit,
     minutesToPixels,
+    pixelsToMinutes,
     clamp,
     generateId,
     getCanvasRelativeY
@@ -825,18 +826,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const hiddenCount = hiddenStaff.length;
 
         // =========================
-        // CHIP VISIBILI
+        // CHIP CON RUOLO TRA PARENTESI
         // =========================
         const chips = visibleStaff.map(m => {
             const isQuick = !!m.isQuick;
+            const role = (m.role || '').trim();
 
             return `
         <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}">
-            <span class="uo-staff-name">${escapeHtml(m.name)}</span>
+            <span class="uo-staff-name">
+                ${escapeHtml(m.name)}
+                ${!isQuick && role ? ` <span class="uo-staff-role-inline">(${escapeHtml(role)})</span>` : ''}
+            </span>
             ${isQuick ? `<span class="uo-staff-badge">⚡</span>` : ''}
         </span>
-        `;
+    `;
         }).join('');
+
 
         // =========================
         // +X CON HOVER LIST
@@ -1245,22 +1251,57 @@ document.addEventListener('DOMContentLoaded', () => {
             setActiveVisuals(targetBlock);
             return;
         }
-
         /* =========================
-           CREATE — GUARDIA GUTTER
+           CREATE — GUARDIA GUTTER (ANTI OVERLAP)
         ========================= */
 
-        const y = e.clientY;
+        const canvasRect = canvas.getBoundingClientRect();
+        const y = e.clientY - canvasRect.top;
+
+        // 🔑 calcolo coerente con la timeline
+        const clickedMinute = snapToUnit(
+            (y / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES
+        );
+
+        const MIN_DURATION = 60;
+
+        // 1️⃣ blocco sotto il cursore → stop
         const blockUnderCursor = Array.from(
             canvas.querySelectorAll('.uo-timeline-block')
         ).find(blockEl => {
             const r = blockEl.getBoundingClientRect();
-            return y >= r.top && y <= r.bottom;
+            return e.clientY >= r.top && e.clientY <= r.bottom;
         });
 
-        if (blockUnderCursor) {
+        if (blockUnderCursor) return;
+
+        // 2️⃣ prossimo blocco dopo il click
+        const nextBlock = blocks
+            .filter(b => b.tStart > clickedMinute)
+            .sort((a, b) => a.tStart - b.tStart)[0];
+
+        const timelineEnd = cfg.total_slots * CONFIG.UNIT_MINUTES;
+        const nextStart = nextBlock ? nextBlock.tStart : timelineEnd;
+
+        // 3️⃣ spazio libero reale
+        const freeDuration = nextStart - clickedMinute;
+
+        // 4️⃣ guardia vera
+        if (freeDuration < MIN_DURATION) {
+            toast(
+                'warning',
+                'Non c’è spazio sufficiente per creare un blocco',
+                { duration: 2200 }
+            );
             return;
         }
+
+        // ✅ QUI lasci il tuo codice originale di creazione blocco
+        renderBlocks();
+        updateStaffOverflow();
+
+
+
 
         /* =========================
            CREATE
