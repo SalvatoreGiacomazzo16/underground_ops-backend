@@ -251,7 +251,7 @@ main.admin-content {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    overflow: hidden;
+    overflow: visible;
 
     border-radius: 6px;
     padding: 12px 14px 16px;
@@ -484,6 +484,7 @@ main.admin-content {
 .uo-timeline-block.is-active .uo-block-actions {
     opacity: 1;
     pointer-events: auto;
+    z-index: $z-tl-block;
 }
 
 /* Stile base bottone azione */

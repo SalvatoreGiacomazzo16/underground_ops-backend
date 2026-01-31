@@ -101,6 +101,45 @@ function findGapForMinute(blocks, minute, timelineEnd) {
     return null;
 }
 
+//Delete gauge only client
+export function bindHoldAction({
+    element,
+    duration = 1200,
+    onConfirm,
+    onCancel
+}) {
+    let timer = null;
+
+    const start = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        element.classList.add('holding');
+        element.style.setProperty('--holdTime', duration + 'ms');
+
+        timer = setTimeout(() => {
+            onConfirm?.();
+            cleanup();
+        }, duration);
+    };
+
+    const stop = () => {
+        if (!timer) return;
+        onCancel?.();
+        cleanup();
+    };
+
+    const cleanup = () => {
+        clearTimeout(timer);
+        timer = null;
+        element.classList.remove('holding');
+    };
+
+    element.addEventListener('pointerdown', start);
+    element.addEventListener('pointerup', stop);
+    element.addEventListener('pointerleave', stop);
+}
+
 
 
 

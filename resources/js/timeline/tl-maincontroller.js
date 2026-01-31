@@ -22,7 +22,7 @@ import {
 } from './tl-ui-comp.js';
 
 
-import { findNearestFreeStart } from './tl-utils.js';
+import { findNearestFreeStart, bindHoldAction } from './tl-utils.js';
 
 
 
@@ -647,6 +647,70 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    const assignedContainer = staffDrawer.querySelector('[data-staff-assigned]');
+
+    assignedContainer.addEventListener('pointerdown', (e) => {
+        const deleteBtn = e.target.closest('[data-action="delete"]');
+        if (!deleteBtn) return;
+
+        const row = deleteBtn.closest('.uo-staff-assigned-row');
+        if (!row) return;
+
+        const staffId = row.dataset.staffId;
+        if (!staffId) return;
+
+        bindHoldAction({
+            element: deleteBtn,
+            onConfirm: () => {
+                removeStaffFromActiveBlock(staffId);
+            }
+        });
+    });
+
+    function renderAssignedStaff(block) {
+        const container = staffDrawer.querySelector('.uo-staff-assigned-list');
+        if (!container) return;
+
+        if (!block.staff || block.staff.length === 0) {
+            container.innerHTML = `
+          <div class="uo-staff-assigned-empty">
+            Nessuno staff assegnato a questo blocco
+          </div>
+        `;
+            return;
+        }
+
+        container.innerHTML = block.staff.map(m => `
+      <div class="uo-staff-assigned-row" data-staff-id="${m.id}">
+        <span class="uo-staff-assigned-name">
+          ${m.isQuick ? '⚡' : '👤'} ${escapeHtml(m.name)}
+        </span>
+
+        <div class="uo-staff-assigned-actions">
+          ${m.isQuick ? `<button data-rename>✏️</button>` : ''}
+          <button data-remove>✕</button>
+        </div>
+      </div>
+    `).join('');
+    }
+
+
+
+    function removeStaffFromActiveBlock(staffId) {
+        if (!activeBlockId) return;
+
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block || !Array.isArray(block.staff)) return;
+
+        block.staff = block.staff.filter(s => String(s.id) !== String(staffId));
+
+        TimelineRepository.save(blocks);
+
+        // aggiorna UI
+        rerenderBlockStaff(block.id);
+        renderAssignedStaff(block);
+    }
+
 
 
 
@@ -956,55 +1020,248 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hiddenCount > 0) {
                 moreEl.textContent = `+${hiddenCount}`;
                 moreEl.classList.remove('is-hidden');
-
-                // hover list
-                moreEl.innerHTML = `
-        +${hiddenCount}
-        <span class="uo-staff-hover">
-          ${chips
+                //hover list
+                moreEl.textContent = `+${hiddenCount}`;
+                moreEl.dataset.staffHover = JSON.stringify(
+                    chips
                         .filter(c => c.classList.contains('is-hidden'))
-                        .map(c => `<div class="uo-staff-hover-item">${c.textContent}</div>`)
-                        .join('')}
-        </span>
-      `;
+                        .map(c => c.textContent)
+                );
+
             }
         });
     }
 
 
+    let floatingStaffHover = null;
+    let currentStaffTrigger = null;
 
-    function renderAssignedStaff(block) {
-        const container = staffDrawer.querySelector('[data-staff-assigned]');
-        if (!container) return;
+    document.addEventListener('mouseover', (e) => {
+        const target =
+            e.target instanceof Element
+                ? e.target
+                : e.target.parentElement;
 
-        const staff = Array.isArray(block.staff) ? block.staff : [];
+        if (!target) return;
 
-        // =========================
-        // EMPTY STATE
-        // =========================
-        if (staff.length === 0) {
-            container.innerHTML = `
-            <div class="uo-staff-empty">
-                Nessuno staff assegnato a questo blocco
-            </div>
-        `;
+        const trigger = target.closest('[data-staff-more]');
+        if (!trigger) return;
+
+        // se è già aperto per questo trigger, non rifare nulla
+        if (floatingStaffHover && currentStaffTrigger === trigger) return;
+
+        const items = JSON.parse(trigger.dataset.staffHover || '[]');
+        if (!items.length) return;
+
+        // cleanup eventuale
+        floatingStaffHover?.remove();
+
+        const rect = trigger.getBoundingClientRect();
+
+        floatingStaffHover = document.createElement('div');
+        floatingStaffHover.className = 'uo-staff-hover-floating';
+        floatingStaffHover.innerHTML = items
+            .map(n => `<div class="uo-staff-hover-item">${n}</div>`)
+            .join('');
+
+        floatingStaffHover.style.top = `${rect.bottom + 6}px`;
+        floatingStaffHover.style.left = `${rect.left}px`;
+
+
+        document.body.appendChild(floatingStaffHover);
+
+        // 🔑 stato globale
+        document.body.classList.add('is-staff-hover-open');
+        currentStaffTrigger = trigger;
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        if (!floatingStaffHover) return;
+
+        const from =
+            e.target instanceof Element
+                ? e.target
+                : e.target.parentElement;
+
+        const to =
+            e.relatedTarget instanceof Element
+                ? e.relatedTarget
+                : e.relatedTarget?.parentElement;
+
+        if (!from) return;
+
+        const leavingTrigger = from.closest('[data-staff-more]');
+        const enteringHover = to?.closest('.uo-staff-hover-floating');
+        const enteringTrigger = to?.closest('[data-staff-more]');
+
+        // se sto andando dal +X → hover (o viceversa), NON chiudere
+        if (leavingTrigger && (enteringHover || enteringTrigger)) {
             return;
         }
 
+        // chiusura reale
+        floatingStaffHover.remove();
+        floatingStaffHover = null;
+        currentStaffTrigger = null;
+
+        document.body.classList.remove('is-staff-hover-open');
+    });
+
+
+
+
+    function openStaffDrawer(blockId, blockLabel = '') {
+        if (!staffDrawer) return;
+
+        const block = blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        activeBlockId = blockId;
+
         // =========================
-        // STAFF LIST
+        // TITOLO
         // =========================
-        container.innerHTML = staff.map(member => `
-        <div class="uo-staff-assigned-row">
-            <span class="uo-staff-assigned-name">
-                ${member.isQuick ? '⚡' : '👤'}
-                ${member.name}
-            </span>
+        const titleEl = document.getElementById('uo-staff-drawer-title');
+        if (titleEl) {
+            titleEl.textContent = `Staff — ${blockLabel || 'Blocco'}`;
+        }
+
+        // =========================
+        // ORARIO DINAMICO
+        // =========================
+        const timeEl = document.getElementById('uo-staff-drawer-time');
+        if (timeEl) {
+            const unit = CONFIG.UNIT_MINUTES;
+
+            const axisStart =
+                cfg.axis_start_minutes ??
+                (cfg.axis_start_slot * unit) ??
+                0;
+
+            const startMinutes = axisStart + block.tStart;
+            const endMinutes = startMinutes + block.duration;
+
+            timeEl.textContent =
+                `${minutesToHHMM(startMinutes)} → ${minutesToHHMM(endMinutes)} • ${block.duration} min`;
+        }
+
+        // =========================
+        // APERTURA DRAWER
+        // =========================
+        staffDrawer.classList.remove('is-hidden');
+        staffDrawer.removeAttribute('inert');
+
+        // =========================
+        // STAFF ASSEGNATO (LISTA)
+        // =========================
+        renderAssignedStaff(block);
+
+        // =========================
+        // AGGIUNTA RAPIDA ⚡ (INPUT + ENTER)
+        // =========================
+        const quickInput = staffDrawer.querySelector('[data-staff-quick-input]');
+        const quickAddBtn = staffDrawer.querySelector('[data-staff-quick-add]');
+
+        function handleQuickStaffAdd() {
+            if (!quickInput) return;
+
+            const name = quickInput.value.trim();
+            if (!name) return;
+
+            addQuickStaffToActiveBlock(name);
+
+            quickInput.value = '';
+            quickInput.focus();
+
+            // aggiorna lista staff assegnato
+            renderAssignedStaff(block);
+        }
+
+        if (quickAddBtn) {
+            quickAddBtn.onclick = handleQuickStaffAdd;
+        }
+
+        if (quickInput) {
+            quickInput.onkeydown = (e) => {
+                if (e.key !== 'Enter') return;
+                if (e.shiftKey) return;
+
+                e.preventDefault();
+                handleQuickStaffAdd();
+            };
+        }
+
+        // =========================
+        // STAFF DELL’ACCOUNT (ACCORDION)
+        // =========================
+        const accountListEl = staffDrawer.querySelector('.uo-staff-account-list');
+        const countEl = staffDrawer.querySelector('.uo-staff-accordion-count');
+
+        if (!accountListEl || !countEl) {
+            console.warn('Staff drawer: elementi DOM mancanti');
+            return;
+        }
+
+        // Stato iniziale
+        accountListEl.innerHTML = `
+        <div class="uo-staff-account-empty text-white">
+            Caricamento staff…
         </div>
-    `).join('');
+    `;
+        countEl.textContent = '(…)';
+
+        // Fetch + render
+        fetchAccountStaff()
+            .then(staff => {
+                accountStaffCache = Array.isArray(staff) ? staff : [];
+
+                countEl.textContent = `(${accountStaffCache.length})`;
+
+                if (!accountStaffCache.length) {
+                    accountListEl.innerHTML = `
+                    <div class="uo-staff-account-empty text-white">
+                        Nessuno staff disponibile per questo account
+                    </div>
+                `;
+                    return;
+                }
+
+                accountListEl.innerHTML = accountStaffCache.map(s => `
+                <div class="uo-staff-row" data-staff-id="${s.id}">
+                    <div class="uo-staff-main">
+                        <span class="uo-staff-name">
+                            ${s.stage_name ?? ''}
+                            ${s.role
+                        ? `<span class="uo-staff-role-inline"> (${s.role})</span>`
+                        : (
+                            Array.isArray(s.skills) && s.skills.length
+                                ? `<span class="uo-staff-role-inline"> (${s.skills.join(', ')})</span>`
+                                : ''
+                        )
+                    }
+                        </span>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="uo-staff-assign"
+                        title="Assegna"
+                        data-staff-id="${s.id}"
+                    >+</button>
+                </div>
+            `).join('');
+            })
+            .catch(err => {
+                console.error('Errore fetchAccountStaff:', err);
+                accountStaffCache = [];
+                countEl.textContent = '(!)';
+                accountListEl.innerHTML = `
+                <div class="uo-staff-account-empty text-white">
+                    Errore caricamento staff
+                </div>
+            `;
+            });
     }
-
-
 
 
     // helper semplice per evitare XSS nei title / html
@@ -1025,38 +1282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         TimelineRepository.save(blocks);
         renderBlocks();
         updateStaffOverflow();
-    }
-    function openBlockContextMenu({ x, y, blockId }) {
-        closeContextMenus();
-
-        const menu = document.createElement('div');
-        menu.className = 'uo-context-menu';
-
-        menu.innerHTML = `
-        <button class="uo-context-item uo-context-item--danger">
-            Elimina blocco
-        </button>
-    `;
-
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
-
-        document.body.appendChild(menu);
-
-        // Click su "Elimina"
-        menu.querySelector('.uo-context-item--danger')
-            .addEventListener('click', e => {
-                e.stopPropagation();
-                deleteBlock(blockId);
-                closeContextMenus();
-            });
-
-        // Click fuori → chiudi
-        setTimeout(() => {
-            document.addEventListener('click', closeContextMenus, { once: true });
-        }, 0);
-
-
     }
 
     // ----------------

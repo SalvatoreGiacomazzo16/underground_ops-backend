@@ -482,7 +482,7 @@
 .uo-staff-drawer {
     position: fixed;
     inset: 0;
-    z-index: 9999; // sopra tutto (timeline, sidebar, modali)
+    z-index: $z-sidebar-floating;
     display: flex;
     pointer-events: none;
 }
@@ -893,4 +893,14 @@
 .uo-staff-assigned-list::-webkit-scrollbar-thumb {
     background: rgba(255, 0, 255, 0.25);
     border-radius: 4px;
+}
+
+.uo-staff-hover-floating {
+    position: relative;
+    z-index: $z-debug;
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    padding: 6px;
+    pointer-events: auto;
 }
