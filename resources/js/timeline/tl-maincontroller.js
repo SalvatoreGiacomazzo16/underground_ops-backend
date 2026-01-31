@@ -13,7 +13,7 @@ import {
 } from './tl-utils.js';
 
 import { TimelineRepository } from './tl-storage.js';
-import { injectStyles } from './tl-style.js';
+
 
 import {
 
@@ -63,7 +63,7 @@ function renderTimeAxis(cfg) {
 // MAIN (SINGLE ENTRY POINT)
 // ================================
 document.addEventListener('DOMContentLoaded', () => {
-    injectStyles();
+
 
     // ----------------
     // References
@@ -529,7 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `${minutesToHHMM(startMinutes)} → ${minutesToHHMM(endMinutes)} • ${block.duration} min`;
         }
 
-
         // =========================
         // APERTURA DRAWER
         // =========================
@@ -537,7 +536,47 @@ document.addEventListener('DOMContentLoaded', () => {
         staffDrawer.removeAttribute('inert');
 
         // =========================
-        // STEP 2C — POPOLA ACCORDION STAFF ACCOUNT
+        // STAFF ASSEGNATO (LISTA)
+        // =========================
+        renderAssignedStaff(block);
+
+        // =========================
+        // AGGIUNTA RAPIDA ⚡ (INPUT + ENTER)
+        // =========================
+        const quickInput = staffDrawer.querySelector('[data-staff-quick-input]');
+        const quickAddBtn = staffDrawer.querySelector('[data-staff-quick-add]');
+
+        function handleQuickStaffAdd() {
+            if (!quickInput) return;
+
+            const name = quickInput.value.trim();
+            if (!name) return;
+
+            addQuickStaffToActiveBlock(name);
+
+            quickInput.value = '';
+            quickInput.focus();
+
+            // aggiorna lista staff assegnato
+            renderAssignedStaff(block);
+        }
+
+        if (quickAddBtn) {
+            quickAddBtn.onclick = handleQuickStaffAdd;
+        }
+
+        if (quickInput) {
+            quickInput.onkeydown = (e) => {
+                if (e.key !== 'Enter') return;
+                if (e.shiftKey) return;
+
+                e.preventDefault();
+                handleQuickStaffAdd();
+            };
+        }
+
+        // =========================
+        // STAFF DELL’ACCOUNT (ACCORDION)
         // =========================
         const accountListEl = staffDrawer.querySelector('.uo-staff-account-list');
         const countEl = staffDrawer.querySelector('.uo-staff-accordion-count');
@@ -564,19 +603,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!accountStaffCache.length) {
                     accountListEl.innerHTML = `
-              <div class="uo-staff-account-empty text-white">
-                  Nessuno staff disponibile per questo account
-              </div>
-          `;
+                    <div class="uo-staff-account-empty text-white">
+                        Nessuno staff disponibile per questo account
+                    </div>
+                `;
                     return;
                 }
 
                 accountListEl.innerHTML = accountStaffCache.map(s => `
-          <div class="uo-staff-row" data-staff-id="${s.id}">
-              <div class="uo-staff-main">
-                  <span class="uo-staff-name">
-                      ${s.stage_name ?? ''}
-                      ${s.role
+                <div class="uo-staff-row" data-staff-id="${s.id}">
+                    <div class="uo-staff-main">
+                        <span class="uo-staff-name">
+                            ${s.stage_name ?? ''}
+                            ${s.role
                         ? `<span class="uo-staff-role-inline"> (${s.role})</span>`
                         : (
                             Array.isArray(s.skills) && s.skills.length
@@ -584,29 +623,30 @@ document.addEventListener('DOMContentLoaded', () => {
                                 : ''
                         )
                     }
-                  </span>
-              </div>
+                        </span>
+                    </div>
 
-              <button
-                  type="button"
-                  class="uo-staff-assign"
-                  title="Assegna"
-                  data-staff-id="${s.id}"
-              >+</button>
-          </div>
-      `).join('');
+                    <button
+                        type="button"
+                        class="uo-staff-assign"
+                        title="Assegna"
+                        data-staff-id="${s.id}"
+                    >+</button>
+                </div>
+            `).join('');
             })
             .catch(err => {
                 console.error('Errore fetchAccountStaff:', err);
                 accountStaffCache = [];
                 countEl.textContent = '(!)';
                 accountListEl.innerHTML = `
-          <div class="uo-staff-account-empty text-white">
-              Errore caricamento staff
-          </div>
-      `;
+                <div class="uo-staff-account-empty text-white">
+                    Errore caricamento staff
+                </div>
+            `;
             });
     }
+
 
 
 
@@ -640,6 +680,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         TimelineRepository.save(blocks);
         rerenderBlockStaff(block.id);
+        renderAssignedStaff(block);
+
     }
 
 
@@ -707,6 +749,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         TimelineRepository.save(blocks);
         rerenderBlockStaff(block.id);
+        renderAssignedStaff(block);
+
     }
 
 
@@ -927,6 +971,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+
+    function renderAssignedStaff(block) {
+        const container = staffDrawer.querySelector('[data-staff-assigned]');
+        if (!container) return;
+
+        const staff = Array.isArray(block.staff) ? block.staff : [];
+
+        // =========================
+        // EMPTY STATE
+        // =========================
+        if (staff.length === 0) {
+            container.innerHTML = `
+            <div class="uo-staff-empty">
+                Nessuno staff assegnato a questo blocco
+            </div>
+        `;
+            return;
+        }
+
+        // =========================
+        // STAFF LIST
+        // =========================
+        container.innerHTML = staff.map(member => `
+        <div class="uo-staff-assigned-row">
+            <span class="uo-staff-assigned-name">
+                ${member.isQuick ? '⚡' : '👤'}
+                ${member.name}
+            </span>
+        </div>
+    `).join('');
+    }
 
 
 

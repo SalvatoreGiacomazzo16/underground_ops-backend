@@ -946,3 +946,41 @@ main.admin-content {
 .uo-block--l .uo-block-staff-icon {
     transform: scale(1.05);
 }
+
+/* =========================
+   BLOCCO SMALL (60 min)
+========================= */
+
+.uo-block--s {
+    padding-bottom: 0;
+    overflow: visible; // 🔑 niente respiro extra
+}
+
+
+.uo-block--s .uo-staff-chip {
+    font-size: 12.5px;
+    padding: 1px 5px;
+    height: 18px;
+}
+
+.uo-block--s .uo-block-main {
+    margin-bottom: 4px;
+}
+
+.uo-block--s .uo-block-staff-strip {
+    margin-top: 4px;
+    height: 22px; // 🔑 ALTEZZA FISSA
+    max-height: 22px;
+    overflow: hidden; // 🔑 non cresce MAI
+}
+
+
+.uo-staff-more {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    opacity: 0.85;
+    background: rgba(0, 0, 0, .25);
+    border: 1px dashed rgba(255, 255, 255, .25);
+}

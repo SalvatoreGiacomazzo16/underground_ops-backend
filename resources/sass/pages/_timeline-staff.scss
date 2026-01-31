@@ -402,6 +402,13 @@
     /* 🔑 sopra la strip */
 }
 
+
+.uo-staff-more.is-hidden {
+    display: none !important;
+}
+
+
+
 /* =====================================================
    HOVER LIST — DEVE BUCARE L’OVERFLOW
 ===================================================== */
@@ -629,6 +636,10 @@
     opacity: 0.7;
 }
 
+.uo-staff-accordion-trigger[aria-expanded="true"] .uo-staff-accordion-arrow {
+    transform: rotate(90deg);
+}
+
 .uo-staff-accordion-title {
     flex: 1;
 }
@@ -826,40 +837,60 @@
 }
 
 
-/* =========================
-   BLOCCO SMALL (60 min)
-========================= */
+.uo-staff-assigned-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 
-.uo-block--s {
-    padding-bottom: 0;
-    overflow: visible; // 🔑 niente respiro extra
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 6px;
 }
 
+.uo-staff-assigned-row {
+    display: flex;
+    align-items: center;
 
-.uo-block--s .uo-staff-chip {
-    font-size: 12.5px;
-    padding: 1px 5px;
-    height: 18px;
+    padding: 6px 10px;
+    border-radius: 8px;
+
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+
+    cursor: default;
+    transition:
+        background 0.15s ease,
+        transform 0.12s ease;
+
+    &:hover {
+        background: rgba(255, 0, 255, 0.08);
+        transform: translateX(2px);
+    }
 }
 
-.uo-block--s .uo-block-main {
-    margin-bottom: 4px;
+.uo-staff-assigned-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.uo-block--s .uo-block-staff-strip {
-    margin-top: 4px;
-    height: 22px; // 🔑 ALTEZZA FISSA
-    max-height: 22px;
-    overflow: hidden; // 🔑 non cresce MAI
+.uo-staff-assigned-row:has(.uo-icon-quick) {
+    color: #ffccff;
 }
 
+.uo-icon-quick {
+    filter: drop-shadow(0 0 4px rgba(255, 0, 255, 0.6));
+}
 
-.uo-staff-more {
-    flex-shrink: 0;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    opacity: 0.85;
-    background: rgba(0, 0, 0, .25);
-    border: 1px dashed rgba(255, 255, 255, .25);
+.uo-staff-assigned-row:hover {
+    box-shadow: inset 2px 0 0 rgba(255, 0, 255, 0.6);
+}
+
+.uo-staff-assigned-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.uo-staff-assigned-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 255, 0.25);
+    border-radius: 4px;
 }

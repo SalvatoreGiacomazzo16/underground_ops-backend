@@ -50,22 +50,24 @@
 <section class="uo-staff-drawer__content">
 
     {{-- =========================
-        STAFF ASSEGNATO (VERITÀ)
+        STAFF ASSEGNATO
     ========================== --}}
-    <div class="uo-staff-section">
-        <h4 class="uo-staff-section__title">
-            Staff assegnato
-        </h4>
+<div class="uo-staff-section">
+    <h4 class="uo-staff-section__title">
+        Staff assegnato
+    </h4>
 
-        <div class="uo-staff-assigned-list" data-staff-assigned>
-            {{-- Stato vuoto --}}
-            <div class="uo-staff-empty">
-                Nessuno staff assegnato a questo blocco
-            </div>
-
-
+    <div
+        class="uo-staff-assigned-list"
+        data-staff-assigned
+    >
+        {{-- Stato vuoto (fallback iniziale, sostituito dal JS) --}}
+        <div class="uo-staff-empty">
+            Nessuno staff assegnato a questo blocco
         </div>
     </div>
+</div>
+
 
     <hr class="uo-staff-divider">
 
