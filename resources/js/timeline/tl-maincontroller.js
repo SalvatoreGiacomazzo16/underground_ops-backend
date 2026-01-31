@@ -1,4 +1,4 @@
-// ================================
+﻿// ================================
 // TIMELINE.JS (MAIN CONTROLLER) — SLOT-BASED PURO
 // ================================
 
@@ -21,6 +21,8 @@ import {
     renderEventRangeFromSlots
 } from './tl-ui-comp.js';
 
+
+import { findNearestFreeStart } from './tl-utils.js';
 
 
 
@@ -1187,13 +1189,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+
+    function createBlockAt(tStart) {
+        const newBlock = {
+            id: generateId(),
+            tStart,
+            duration: 60,
+            label: 'NEW SLOT',
+            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)],
+            staff: []
+        };
+
+        blocks.push(newBlock);
+        activeBlockId = newBlock.id;
+
+        TimelineRepository.save(blocks);
+        renderBlocks();
+        updateStaffOverflow();
+    }
+
+
+
     // ----------------
     // Pointer Down
     // ----------------
     canvas.addEventListener('pointerdown', (e) => {
         closeContextMenu();
 
-        // click destro mouse ignorato
+        // ignora click destro mouse
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         const targetBlock = e.target.closest('.uo-timeline-block');
@@ -1204,9 +1228,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ghost) ghost.style.opacity = '0';
 
         const setActiveVisuals = (blockEl) => {
-            canvas.querySelectorAll('.uo-timeline-block.is-active').forEach(el =>
-                el.classList.remove('is-active')
-            );
+            canvas.querySelectorAll('.uo-timeline-block.is-active')
+                .forEach(el => el.classList.remove('is-active'));
             if (blockEl) blockEl.classList.add('is-active');
         };
 
@@ -1251,21 +1274,19 @@ document.addEventListener('DOMContentLoaded', () => {
             setActiveVisuals(targetBlock);
             return;
         }
+
         /* =========================
-           CREATE — GUARDIA GUTTER (ANTI OVERLAP)
+           CREATE — GUARDIA GUTTER
         ========================= */
 
-        const canvasRect = canvas.getBoundingClientRect();
-        const y = e.clientY - canvasRect.top;
-
-        // 🔑 calcolo coerente con la timeline
         const clickedMinute = snapToUnit(
-            (y / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES
+            (rawY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES
         );
 
         const MIN_DURATION = 60;
+        const timelineEnd = cfg.total_slots * CONFIG.UNIT_MINUTES;
 
-        // 1️⃣ blocco sotto il cursore → stop
+        // ❌ se clicchi sopra un blocco → stop
         const blockUnderCursor = Array.from(
             canvas.querySelectorAll('.uo-timeline-block')
         ).find(blockEl => {
@@ -1275,19 +1296,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (blockUnderCursor) return;
 
-        // 2️⃣ prossimo blocco dopo il click
-        const nextBlock = blocks
-            .filter(b => b.tStart > clickedMinute)
-            .sort((a, b) => a.tStart - b.tStart)[0];
+        // 🔧 se clicchi troppo in basso, shifta verso l’alto
+        const probeMinute = Math.min(
+            clickedMinute,
+            timelineEnd - MIN_DURATION
+        );
 
-        const timelineEnd = cfg.total_slots * CONFIG.UNIT_MINUTES;
-        const nextStart = nextBlock ? nextBlock.tStart : timelineEnd;
+        const startMinute = findNearestFreeStart({
+            blocks,
+            clickedMinute,
+            minDuration: MIN_DURATION,
+            timelineEnd: cfg.total_slots * CONFIG.UNIT_MINUTES,
+            mode: 'strict'
+        });
 
-        // 3️⃣ spazio libero reale
-        const freeDuration = nextStart - clickedMinute;
-
-        // 4️⃣ guardia vera
-        if (freeDuration < MIN_DURATION) {
+        if (startMinute === null) {
             toast(
                 'warning',
                 'Non c’è spazio sufficiente per creare un blocco',
@@ -1296,62 +1319,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // ✅ QUI lasci il tuo codice originale di creazione blocco
-        renderBlocks();
-        updateStaffOverflow();
-
-
-
-
-        /* =========================
-           CREATE
-        ========================= */
-
-        if (currentGhostY === null) return;
-
-        activeBlockId = null;
-
-        const startSlot = Math.round(currentGhostY / CONFIG.SLOT_HEIGHT);
-        let tStart = startSlot * CONFIG.UNIT_MINUTES;
-        let tDuration = snapToUnit(CONFIG.DEFAULT_DURATION);
-
-        const totalMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
-
-        let limitStart = 0;
-        let limitEnd = totalMinutes;
-
-        for (const b of blocks) {
-            const bEnd = b.tStart + b.duration;
-            if (bEnd <= tStart) limitStart = Math.max(limitStart, bEnd);
-            if (b.tStart >= tStart) limitEnd = Math.min(limitEnd, b.tStart);
-        }
-
-        if (tStart + tDuration > limitEnd) {
-            const shiftedStart = limitEnd - tDuration;
-            if (shiftedStart >= limitStart) {
-                tStart = shiftedStart;
-            } else {
-                tStart = limitStart;
-                tDuration = Math.max(CONFIG.UNIT_MINUTES, limitEnd - limitStart);
-            }
-        }
-
-        const newBlock = {
-            id: generateId(),
-            tStart,
-            duration: tDuration,
-            label: 'NEW SLOT',
-            color: NEON_PALETTE[Math.floor(Math.random() * NEON_PALETTE.length)],
-            staff: []
-        };
-
-        blocks.push(newBlock);
-        activeBlockId = newBlock.id;
-
-        TimelineRepository.save(blocks);
-        renderBlocks();
-        updateStaffOverflow();
+        createBlockAt(startMinute);
     });
+
 
 
     // Pointer Move
