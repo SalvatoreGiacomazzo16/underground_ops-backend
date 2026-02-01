@@ -188,10 +188,7 @@ export function minutesToHHMM(totalMinutes) {
     return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
-export function deleteBlock({
-    blocks,
-    blockId
-}) {
+export function deleteBlock({ blocks, blockId }) {
     return blocks.filter(b => b.id !== blockId);
 }
 

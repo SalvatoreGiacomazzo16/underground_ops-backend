@@ -4,6 +4,11 @@
 // ================================
 import { escapeHtml } from './tl-utils.js';
 
+import {
+    snapToUnit,
+    minutesToPixels
+} from './tl-utils.js';
+
 // ================================
 // STAFF RENDERING
 // ================================
@@ -546,4 +551,83 @@ export function initColorMenu({
     };
 }
 
+// ----------------
+//Block Rendering Logic
+// ----------------
+export function buildBlockElement(block, ctx) {
+    const {
+        CONFIG,
+        cfg,
+        activeBlockId
+    } = ctx;
+
+    if (!Array.isArray(block.staff)) block.staff = [];
+
+    const snappedStart = snapToUnit(block.tStart);
+    const snappedDuration = snapToUnit(block.duration);
+
+    const MIN_DURATION = 60;
+    const safeDuration = Math.max(snappedDuration, MIN_DURATION);
+
+    const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
+    if (snappedStart < 0 || snappedStart >= timelineMinutes) return null;
+
+    const top = minutesToPixels(snappedStart);
+    const height = minutesToPixels(safeDuration);
+
+    const el = document.createElement('div');
+    el.className = 'uo-timeline-block';
+    el.dataset.blockId = block.id;
+
+    if (block.id === activeBlockId) {
+        el.classList.add('is-active');
+    }
+
+    el.style.top = `${top}px`;
+    el.style.height = `${height}px`;
+    el.style.backgroundColor = block.color;
+
+    let sizeClass = 'uo-block--m';
+    if (height <= 80) sizeClass = 'uo-block--s';
+    else if (height >= 160) sizeClass = 'uo-block--l';
+    el.classList.add(sizeClass);
+
+    block.__size =
+        sizeClass === 'uo-block--s' ? 's' :
+            sizeClass === 'uo-block--l' ? 'l' : 'm';
+
+    el.innerHTML = `
+        <div class="uo-block-actions">
+            <button
+                class="uo-block-add"
+                type="button"
+                title="Aggiungi staff"
+                data-staff-add
+            >+ Staff</button>
+
+            <button
+                class="uo-block-delete"
+                type="button"
+                title="Elimina blocco"
+                data-delete-block
+            >×</button>
+        </div>
+
+        <div class="uo-block-main">
+            <div class="uo-block-title">
+                ${block.label || 'SENZA TITOLO'}
+            </div>
+
+            <div class="uo-block-duration">
+                ${safeDuration} min
+            </div>
+        </div>
+
+        ${renderStaffStrip(block)}
+
+        <div class="uo-resizer" title="Ridimensiona"></div>
+    `;
+
+    return el;
+}
 

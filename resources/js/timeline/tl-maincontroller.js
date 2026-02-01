@@ -15,31 +15,23 @@ import {
     minutesToHHMM,
     deleteBlock
 } from './tl-utils.js';
-
 import { TimelineRepository, fetchAccountStaff } from './tl-storage.js';
-
-
 import {
-
     generateTimeSlots,
     renderEventRangeFromSlots,
     renderTimeAxis,
     updateTimelineHeaderContext,
     renderStaffStrip,
     renderAssignedStaff,
-    initColorMenu
+    initColorMenu,
+    buildBlockElement
 } from './tl-ui-comp.js';
-
-
 import { findNearestFreeStart, bindHoldAction } from './tl-utils.js';
-
-
 
 // ================================
 // MAIN (SINGLE ENTRY POINT)
 // ================================
 document.addEventListener('DOMContentLoaded', () => {
-
 
     // ----------------
     // References
@@ -83,10 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------
     let blocks = TimelineRepository.load();
 
-    // IMPORTANT: se in passato avevi salvato minuti assoluti (tipo 1320),
-    // ora non li vedrai più in una timeline 0..720.
-    // In quel caso, resetta localStorage per l’evento.
-
     // ----------------
     // State — Runtime
     // ----------------
@@ -108,6 +96,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoScrollAF = null;
     let scrollDirection = 0;
 
+    function setBlocks(nextBlocks) {
+        blocks = nextBlocks;
+        TimelineRepository.save(blocks);
+        renderBlocks();
+        updateStaffOverflow();
+    }
+
+    function setActiveBlockId(id) {
+        activeBlockId = id;
+    }
 
     document.addEventListener('pointerdown', (e) => {
         if (contextMenuEl && !contextMenuEl.contains(e.target)) {
@@ -118,175 +116,129 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ----------------
-    // Rendering Logic
-    // ----------------
+    function attachBlockEvents(el, block, ctx) {
+        const {
+            blocks,
+            CONFIG,
+            openColorMenu,
+            startInlineEdit,
+            openStaffDrawer,
+            updateStaffOverflow,
+            deleteBlock,
+            setActiveBlockId
+        } = ctx;
+
+        /* =========================
+           DELETE
+        ========================= */
+        const delBtn = el.querySelector('[data-delete-block]');
+        if (delBtn) {
+            delBtn.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            delBtn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const updated = deleteBlock({
+                    blocks,
+                    blockId: block.id
+                });
+
+                ctx.setActiveBlockId(null);
+                ctx.setBlocks(updated);
+
+
+                setActiveBlockId(null);
+                updateStaffOverflow();
+            });
+        }
+
+        /* =========================
+           INLINE EDIT TITOLO
+        ========================= */
+        const titleEl = el.querySelector('.uo-block-title');
+        if (titleEl) {
+            titleEl.addEventListener('pointerdown', e => {
+                e.stopPropagation();
+            });
+
+            titleEl.addEventListener('click', e => {
+                e.stopPropagation();
+                startInlineEdit(block.id, titleEl);
+            });
+        }
+
+        /* =========================
+           ADD STAFF
+        ========================= */
+        const staffAddBtn = el.querySelector('[data-staff-add]');
+        if (staffAddBtn) {
+            staffAddBtn.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            staffAddBtn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                openStaffDrawer(block.id, block.label);
+            });
+        }
+
+        /* =========================
+           BLOCCA DRAG SU +N
+        ========================= */
+        const staffMore = el.querySelector('[data-staff-more]');
+        if (staffMore) {
+            staffMore.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
+        /* =========================
+           CONTEXT MENU — COLORE
+        ========================= */
+        el.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            openColorMenu(e.pageX, e.pageY, block.id);
+        });
+    }
+
     function renderBlocks() {
         if (isEditingText) return;
 
-        // pulizia
-        canvas.querySelectorAll('.uo-timeline-block').forEach(el => el.remove());
+        canvas
+            .querySelectorAll('.uo-timeline-block')
+            .forEach(el => el.remove());
 
-        const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
-        const MIN_DURATION = 60;
+        const ctx = {
+            blocks,
+            CONFIG,
+            cfg,
+            activeBlockId,
+            setActiveBlockId: id => activeBlockId = id,
+            setBlocks,
+            openColorMenu,
+            startInlineEdit,
+            openStaffDrawer,
+            updateStaffOverflow,
+            deleteBlock
+        };
 
         blocks.forEach(block => {
-            if (!Array.isArray(block.staff)) block.staff = [];
+            const el = buildBlockElement(block, ctx);
+            if (!el) return;
 
-            const snappedStart = snapToUnit(block.tStart);
-            const snappedDuration = snapToUnit(block.duration);
-
-            // durata minima garantita
-            const safeDuration = Math.max(snappedDuration, MIN_DURATION);
-
-            // fuori timeline
-            if (snappedStart < 0 || snappedStart >= timelineMinutes) return;
-
-            const top = minutesToPixels(snappedStart);
-            const height = minutesToPixels(safeDuration);
-
-            const el = document.createElement('div');
-            el.className = 'uo-timeline-block';
-            el.dataset.blockId = block.id;
-
-            if (block.id === activeBlockId) {
-                el.classList.add('is-active');
-            }
-
-            el.style.top = `${top}px`;
-            el.style.height = `${height}px`;
-            el.style.backgroundColor = block.color;
-
-            // size class basata sull’altezza reale renderizzata
-            let sizeClass = 'uo-block--m';
-            if (height <= 80) sizeClass = 'uo-block--s';     // ~60 min
-            else if (height >= 160) sizeClass = 'uo-block--l';
-            el.classList.add(sizeClass);
-
-            // dopo aver deciso sizeClass
-            block.__size =
-                sizeClass === 'uo-block--s' ? 's' :
-                    sizeClass === 'uo-block--l' ? 'l' : 'm';
-
-
-            // markup
-            el.innerHTML = `
-        <div class="uo-block-actions">
-        <button
-          class="uo-block-add"
-          type="button"
-          title="Aggiungi staff"
-          data-staff-add
-        >+ Staff</button>
-
-        <button
-        class="uo-block-delete"
-        type="button"
-        title="Elimina blocco"
-        data-delete-block
-        >×</button>
-
-
-</div>
-
-
-            <div class="uo-block-main">
-                <div class="uo-block-title">
-                ${block.label || 'SENZA TITOLO'}
-                </div>
-
-                <div class="uo-block-duration">
-                ${safeDuration} min
-                </div>
-                </div>
-
-                ${renderStaffStrip(block)}
-
-                <div class="uo-resizer" title="Ridimensiona"></div>
-                `;
-
-            /* =========================
-            DELETE
-            ========================= */
-            const delBtn = el.querySelector('[data-delete-block]');
-            if (delBtn) {
-                delBtn.addEventListener('pointerdown', e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-
-                delBtn.addEventListener('click', e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    blocks = deleteBlock({
-                        blocks,
-                        blockId: block.id
-                    });
-                    activeBlockId = null;
-                    TimelineRepository.save(blocks);
-                    renderBlocks();
-                    updateStaffOverflow();
-
-                });
-            }
-
-            /* =========================
-            INLINE EDIT TITOLO
-            ========================= */
-            const titleEl = el.querySelector('.uo-block-title');
-            if (titleEl) {
-                titleEl.addEventListener('pointerdown', e => {
-                    e.stopPropagation(); // evita drag
-                });
-
-                titleEl.addEventListener('click', e => {
-                    e.stopPropagation();
-                    startInlineEdit(block.id, titleEl);
-                });
-            }
-
-            /* =========================
-            ADD STAFF (placeholder)
-            ========================= */
-            const staffAddBtn = el.querySelector('[data-staff-add]');
-            if (staffAddBtn) {
-                staffAddBtn.addEventListener('pointerdown', ev => {
-                    ev.preventDefault();
-                    ev.stopPropagation(); // evita drag
-                });
-
-                staffAddBtn.addEventListener('click', ev => {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-
-                    openStaffDrawer(block.id, block.label);
-                });
-            }
-
-            // blocca drag quando si interagisce con +N
-            const staffMore = el.querySelector('[data-staff-more]');
-            if (staffMore) {
-                staffMore.addEventListener('pointerdown', ev => {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                });
-            }
-
-
-
-            /* =========================
-            CONTEXT MENU — COLORE
-            ========================= */
-            el.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                e.stopPropagation();
-                openColorMenu(e.pageX, e.pageY, block.id);
-            });
-
-
+            attachBlockEvents(el, block, ctx);
             canvas.appendChild(el);
         });
     }
+
 
     const { openColorMenu, closeContextMenu } = initColorMenu({
         blocks,
@@ -304,10 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
-
-
-
-
     let accountStaffCache = [];
     // ===============================
     // STAFF DRAWER — OPEN / CLOSE
@@ -317,8 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const staffDrawerPanel = staffDrawer?.querySelector('.uo-staff-drawer__panel');
     const assignedListEl =
         staffDrawer?.querySelector('.uo-staff-assigned-list');
-
-
 
     function openStaffDrawer(blockId, blockLabel = '') {
         if (!staffDrawer) return;
@@ -365,7 +311,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // STAFF ASSEGNATO (LISTA)
         // =========================
         renderAssignedStaff(block, assignedListEl);
-
 
         // =========================
         // AGGIUNTA RAPIDA ⚡ (INPUT + ENTER)
@@ -495,7 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
     function removeStaffFromActiveBlock(staffId) {
         if (!activeBlockId) return;
 
@@ -509,11 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // aggiorna UI
         rerenderBlockStaff(block.id);
         renderAssignedStaff(block, assignedListEl);
-
     }
-
-
-
 
     function closeStaffDrawer() {
         if (!staffDrawer) return;
@@ -546,10 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         TimelineRepository.save(blocks);
         rerenderBlockStaff(block.id);
         renderAssignedStaff(block, assignedListEl);
-
-
     }
-
 
     const quickInput = staffDrawer.querySelector('[data-staff-quick-input]');
     const quickAddBtn = staffDrawer.querySelector('[data-staff-quick-add]');
@@ -575,7 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-
     document.addEventListener('click', (e) => {
         const btn = e.target.closest('.uo-staff-assign');
         if (!btn) return;
@@ -588,7 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         handleAssignStaffFromDb(staffId);
     });
-
 
     function handleAssignStaffFromDb(staffId) {
         if (!activeBlockId) return;
@@ -619,8 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-
-
     function rerenderBlockStaff(blockId) {
         const blockEl = document.querySelector(`.uo-timeline-block[data-block-id="${blockId}"]`);
         if (!blockEl) return;
@@ -648,13 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStaffOverflow();
         }
     }
-
-
-
     // -------------------------------
     // CLOSE HANDLERS
     // -------------------------------
-
     // click su overlay o bottone X
     document.addEventListener('click', (e) => {
         if (!staffDrawer || staffDrawer.classList.contains('is-hidden')) return;
@@ -704,8 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     })();
 
-
-
     document.addEventListener('click', e => {
         const toggle = e.target.closest('.uo-accordion-toggle');
         if (!toggle) return;
@@ -713,9 +640,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggle.classList.toggle('is-open');
         toggle.nextElementSibling.classList.toggle('is-open');
     });
-
-
-
 
     function updateStaffOverflow() {
         document.querySelectorAll('[data-staff-strip]').forEach(strip => {
@@ -758,7 +682,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
 
     let floatingStaffHover = null;
     let currentStaffTrigger = null;
@@ -908,7 +831,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
     }
 
-
     // ----------------
     // Auto-Scroll Engine
     // ----------------
@@ -978,7 +900,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timelineMinutes: cfg.total_slots * CONFIG.UNIT_MINUTES
         });
 
-
         // RESIZE
         if (isResizing) {
             const newHeightRaw = initialBlockHeight + deltaY;
@@ -997,7 +918,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             activeElement.style.height = `${minutesToPixels(clampedDuration)}px`;
         }
-
         // DRAG
         if (isDragging) {
             const newTopRaw = initialBlockTop + deltaY;
@@ -1018,9 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-
-    function createBlockAt(tStart) {
+    function createBlockAt({ blocks, tStart }) {
         const newBlock = {
             id: generateId(),
             tStart,
@@ -1030,15 +948,11 @@ document.addEventListener('DOMContentLoaded', () => {
             staff: []
         };
 
-        blocks.push(newBlock);
-        activeBlockId = newBlock.id;
-
-        TimelineRepository.save(blocks);
-        renderBlocks();
-        updateStaffOverflow();
+        return {
+            blocks: [...blocks, newBlock],
+            activeBlockId: newBlock.id
+        };
     }
-
-
 
     // ----------------
     // Pointer Down
@@ -1085,18 +999,6 @@ document.addEventListener('DOMContentLoaded', () => {
            DRAG
         ========================= */
         if (targetBlock) {
-            if (e.altKey) {
-                blocks = deleteBlock({
-                    blocks,
-                    blockId: block.id
-                });
-                activeBlockId = null;
-                TimelineRepository.save(blocks);
-                renderBlocks();
-                updateStaffOverflow();
-
-                return;
-            }
 
             e.preventDefault();
             isDragging = true;
@@ -1120,7 +1022,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const clickedMinute =
             (currentGhostY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
-
 
         const MIN_DURATION = 60;
         const timelineEnd = cfg.total_slots * CONFIG.UNIT_MINUTES;
@@ -1147,10 +1048,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        createBlockAt(startMinute);
+        const result = createBlockAt({
+            blocks,
+            tStart: startMinute
+        });
+
+        setActiveBlockId(result.activeBlockId);
+        setBlocks(result.blocks);
     });
-
-
 
     // Pointer Move
     canvas.addEventListener('pointermove', (e) => {
