@@ -1,12 +1,7 @@
 <p align="center">
-  <img src="./assets/uops-header.svg" alt="Underground Ops Header"/>
+  <img src="./assets/uops-header.png" alt="Underground Ops Header">
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/engine-deterministic-0AFFC8?style=flat-square">
-  <img src="https://img.shields.io/badge/domain-real_operations-C9169A?style=flat-square">
-  <img src="https://img.shields.io/badge/ui-custom-961474?style=flat-square">
-</p>
 
 # 🖤 UNDERGROUND OPS — Timeline Engine
 ![status](https://img.shields.io/badge/status-active-8A2BE2)
