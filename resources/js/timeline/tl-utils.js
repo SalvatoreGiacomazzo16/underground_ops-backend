@@ -140,6 +140,61 @@ export function bindHoldAction({
     element.addEventListener('pointerleave', stop);
 }
 
+// helper semplice per evitare XSS nei title / html
+export function escapeHtml(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+// ----------------
+// Collision Handling (timeline normalizzata)
+// ----------------
+export function getCollisionLimits({
+    blocks,
+    activeId,
+    timelineMinutes
+}) {
+    const activeBlock = blocks.find(b => b.id === activeId);
+
+    let minStart = 0;
+    let maxEnd = timelineMinutes;
+
+    if (!activeBlock) return { minStart, maxEnd };
+
+    blocks.forEach(other => {
+        if (other.id === activeId) return;
+
+        if (other.tStart + other.duration <= activeBlock.tStart) {
+            minStart = Math.max(minStart, other.tStart + other.duration);
+        }
+
+        if (other.tStart >= activeBlock.tStart + activeBlock.duration) {
+            maxEnd = Math.min(maxEnd, other.tStart);
+        }
+    });
+
+    return { minStart, maxEnd };
+}
+
+export function minutesToHHMM(totalMinutes) {
+    const m = Math.max(0, Math.floor(totalMinutes));
+    const hh = Math.floor(m / 60) % 24;
+    const mm = m % 60;
+
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+export function deleteBlock({
+    blocks,
+    blockId
+}) {
+    return blocks.filter(b => b.id !== blockId);
+}
+
 
 
 

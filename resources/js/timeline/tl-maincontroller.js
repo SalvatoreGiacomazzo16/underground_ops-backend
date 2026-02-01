@@ -9,55 +9,31 @@ import {
     pixelsToMinutes,
     clamp,
     generateId,
-    getCanvasRelativeY
+    getCanvasRelativeY,
+    escapeHtml,
+    getCollisionLimits,
+    minutesToHHMM,
+    deleteBlock
 } from './tl-utils.js';
 
-import { TimelineRepository } from './tl-storage.js';
+import { TimelineRepository, fetchAccountStaff } from './tl-storage.js';
 
 
 import {
 
     generateTimeSlots,
-    renderEventRangeFromSlots
+    renderEventRangeFromSlots,
+    renderTimeAxis,
+    updateTimelineHeaderContext,
+    renderStaffStrip,
+    renderAssignedStaff,
+    initColorMenu
 } from './tl-ui-comp.js';
 
 
 import { findNearestFreeStart, bindHoldAction } from './tl-utils.js';
 
 
-
-
-
-// ================================
-// TIME AXIS RENDER (SLOT-BASED)
-// ================================
-function renderTimeAxis(cfg) {
-    const axis = document.getElementById('timeline-axis');
-    if (!axis) return [];
-
-    axis.innerHTML = '';
-
-    const slots = generateTimeSlots({
-        axisStartSlot: cfg.axis_start_slot,      // assoluto (es: 72)
-        totalSlots: cfg.total_slots,             // 12h -> 48 (se 15m)
-        unitMinutes: CONFIG.UNIT_MINUTES
-    });
-
-    slots.forEach(slot => {
-        const el = document.createElement('div');
-        el.className = 'uo-timeline-axis-slot';
-
-        // Mostriamo testo solo alle ore (ma lo slot esiste sempre ogni 15m)
-        if (slot.isHour) {
-            el.classList.add('is-hour');
-            el.textContent = slot.displayHour;
-        }
-
-        axis.appendChild(el);
-    });
-
-    return slots;
-}
 
 // ================================
 // MAIN (SINGLE ENTRY POINT)
@@ -85,101 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Missing window.__TIMELINE_CONFIG__');
         return;
     }
-    function updateTimelineHeaderContext() {
-        const cfg = window.__TIMELINE_CONFIG__;
-        if (!cfg || cfg.mode !== "multi") return;
-
-        const dateEl = document.getElementById("uo-timeline-current-date");
-        const statusEl = document.getElementById("uo-timeline-date-status");
-
-        if (!dateEl || !statusEl) return;
-
-        const startDateStr = dateEl.dataset.startDate;
-        if (!startDateStr) return;
-
-        const baseDate = new Date(startDateStr);
-        const windowIndex = cfg.page?.index ?? 0;
-
-        // ===== DATA FINESTRA (NON calendario puro)
-        const startMin = cfg.time_real?.start_minutes;
-        const endMin = cfg.time_real?.end_minutes;
-        if (startMin == null || endMin == null) return;
-
-        const startDateTime = new Date(baseDate);
-        startDateTime.setDate(startDateTime.getDate() + windowIndex);
-        startDateTime.setHours(
-            Math.floor(startMin / 60),
-            startMin % 60,
-            0,
-            0
-        );
-
-        const endDateTime = new Date(startDateTime);
-        endDateTime.setMinutes(endDateTime.getMinutes() + (endMin - startMin));
-
-        // ===== FORMAT DATA HEADER
-        const sameDay =
-            startDateTime.toDateString() === endDateTime.toDateString();
-
-        const dateFormatter = new Intl.DateTimeFormat("it-IT", {
-            weekday: "long",
-            day: "2-digit",
-            month: "long"
-        });
-
-        const timeFormatter = new Intl.DateTimeFormat("it-IT", {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-
-        const datePart = sameDay
-            ? dateFormatter.format(startDateTime)
-            : `${dateFormatter.format(startDateTime)} → ${dateFormatter.format(endDateTime)}`;
-
-        const timePart =
-            `${timeFormatter.format(startDateTime)} → ${timeFormatter.format(endDateTime)}`;
-
-        dateEl.textContent = `🗓 ${datePart} • ${timePart}`;
-
-        // ===== BADGE OGGI / DOMANI / IERI (DINAMICO)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const windowDay = new Date(startDateTime);
-        windowDay.setHours(0, 0, 0, 0);
-
-        const diffDays = Math.round(
-            (windowDay - today) / (1000 * 60 * 60 * 24)
-        );
-
-        let label = null;
-        let cls = null;
-
-        if (diffDays === 0) {
-            label = "Oggi";
-            cls = "is-today";
-        } else if (diffDays === 1) {
-            label = "Domani";
-            cls = "is-future";
-        } else if (diffDays === -1) {
-            label = "Ieri";
-            cls = "is-past";
-        } else if (diffDays > 1) {
-            label = `tra ${diffDays} giorni`;
-            cls = "is-future";
-        } else {
-            label = `${Math.abs(diffDays)} giorni fa`;
-            cls = "is-past";
-        }
-
-        // aggiorna badge
-        statusEl.textContent = label;
-        statusEl.className = `uo-meta-status ${cls}`;
-    }
-
-
-
-
 
 
     // Altezza timeline: 1 slot = SLOT_HEIGHT
@@ -190,19 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------
     // Axis + Range
     // ----------------
-    renderTimeAxis(cfg);
+    renderTimeAxis(cfg, CONFIG);
 
     // ----------------
     // Header Date Sync (MULTI DAY)
     // ----------------
-    updateTimelineHeaderContext();
-
-
-    renderEventRangeFromSlots({
-        canvas,
-        rangeStartSlot: cfg.range_start_slot,   // tipicamente 0
-        slotHeight: CONFIG.SLOT_HEIGHT
-    });
+    updateTimelineHeaderContext(cfg);
 
     // ----------------
     // State — Data (INITIAL LOAD)
@@ -234,55 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoScrollAF = null;
     let scrollDirection = 0;
 
-    // ----------------
-    // Context Menu System
-    // ----------------
-    function closeContextMenu() {
-        if (contextMenuEl) {
-            contextMenuEl.remove();
-            contextMenuEl = null;
-        }
-
-    }
-
-
-    function openColorMenu(x, y, blockId) {
-        closeContextMenu();
-
-        const menu = document.createElement('div');
-        menu.className = 'uo-context-menu';
-
-        const OFFSET = 6;
-        menu.style.left = `${x + OFFSET}px`;
-        menu.style.top = `${y + OFFSET}px`;
-
-        NEON_PALETTE.forEach(color => {
-            const swatch = document.createElement('div');
-            swatch.className = 'uo-color-swatch';
-            swatch.style.backgroundColor = color;
-
-            swatch.onpointerdown = (e) => {
-                e.stopPropagation();
-                updateBlockColor(blockId, color);
-                closeContextMenu();
-            };
-
-            menu.appendChild(swatch);
-        });
-
-        document.body.appendChild(menu);
-        contextMenuEl = menu;
-    }
-
-    function updateBlockColor(blockId, color) {
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
-
-        block.color = color;
-        TimelineRepository.save(blocks);
-        renderBlocks();
-        updateStaffOverflow();
-    }
 
     document.addEventListener('pointerdown', (e) => {
         if (contextMenuEl && !contextMenuEl.contains(e.target)) {
@@ -393,7 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
-                    deleteBlock(block.id);
+                    blocks = deleteBlock({
+                        blocks,
+                        blockId: block.id
+                    });
+                    activeBlockId = null;
+                    TimelineRepository.save(blocks);
+                    renderBlocks();
+                    updateStaffOverflow();
+
                 });
             }
 
@@ -450,49 +283,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 openColorMenu(e.pageX, e.pageY, block.id);
             });
 
+
             canvas.appendChild(el);
         });
     }
 
-    function minutesToHHMM(totalMinutes) {
-        // supporta anche minuti > 1440 (multi-day)
-        const m = Math.max(0, Math.floor(totalMinutes));
-        const hh = Math.floor(m / 60) % 24;
-        const mm = m % 60;
+    const { openColorMenu, closeContextMenu } = initColorMenu({
+        blocks,
+        canvas,
+        palette: NEON_PALETTE,
+        onUpdate: (blockId, color) => {
+            const block = blocks.find(b => b.id === blockId);
+            if (!block) return;
 
-        const hStr = String(hh).padStart(2, '0');
-        const mStr = String(mm).padStart(2, '0');
-        return `${hStr}:${mStr}`;
-    }
+            block.color = color;
+            TimelineRepository.save(blocks);
+            renderBlocks();
+            updateStaffOverflow();
+        }
+    });
+
+
+
+
+
 
     let accountStaffCache = [];
     // ===============================
     // STAFF DRAWER — OPEN / CLOSE
     // ===============================
-    async function fetchAccountStaff() {
-
-
-        const res = await fetch('/admin/staff/json', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            }
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Fetch staff failed (${res.status}): ${text.slice(0, 200)}`);
-        }
-
-        return await res.json();
-
-
-    }
-
-
 
     const staffDrawer = document.getElementById('uo-staff-drawer');
     const staffDrawerPanel = staffDrawer?.querySelector('.uo-staff-drawer__panel');
+    const assignedListEl =
+        staffDrawer?.querySelector('.uo-staff-assigned-list');
+
+
 
     function openStaffDrawer(blockId, blockLabel = '') {
         if (!staffDrawer) return;
@@ -538,7 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // =========================
         // STAFF ASSEGNATO (LISTA)
         // =========================
-        renderAssignedStaff(block);
+        renderAssignedStaff(block, assignedListEl);
+
 
         // =========================
         // AGGIUNTA RAPIDA ⚡ (INPUT + ENTER)
@@ -558,7 +385,8 @@ document.addEventListener('DOMContentLoaded', () => {
             quickInput.focus();
 
             // aggiorna lista staff assegnato
-            renderAssignedStaff(block);
+            renderAssignedStaff(block, assignedListEl);
+
         }
 
         if (quickAddBtn) {
@@ -667,34 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function renderAssignedStaff(block) {
-        const container = staffDrawer.querySelector('.uo-staff-assigned-list');
-        if (!container) return;
-
-        if (!block.staff || block.staff.length === 0) {
-            container.innerHTML = `
-          <div class="uo-staff-assigned-empty">
-            Nessuno staff assegnato a questo blocco
-          </div>
-        `;
-            return;
-        }
-
-        container.innerHTML = block.staff.map(m => `
-      <div class="uo-staff-assigned-row" data-staff-id="${m.id}">
-        <span class="uo-staff-assigned-name">
-          ${m.isQuick ? '⚡' : '👤'} ${escapeHtml(m.name)}
-        </span>
-
-        <div class="uo-staff-assigned-actions">
-          ${m.isQuick ? `<button data-rename>✏️</button>` : ''}
-          <button data-remove>✕</button>
-        </div>
-      </div>
-    `).join('');
-    }
-
-
 
     function removeStaffFromActiveBlock(staffId) {
         if (!activeBlockId) return;
@@ -708,7 +508,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // aggiorna UI
         rerenderBlockStaff(block.id);
-        renderAssignedStaff(block);
+        renderAssignedStaff(block, assignedListEl);
+
     }
 
 
@@ -744,7 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         TimelineRepository.save(blocks);
         rerenderBlockStaff(block.id);
-        renderAssignedStaff(block);
+        renderAssignedStaff(block, assignedListEl);
+
 
     }
 
@@ -813,7 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         TimelineRepository.save(blocks);
         rerenderBlockStaff(block.id);
-        renderAssignedStaff(block);
+        renderAssignedStaff(block, assignedListEl);
 
     }
 
@@ -911,81 +713,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toggle.classList.toggle('is-open');
         toggle.nextElementSibling.classList.toggle('is-open');
     });
-
-
-    function renderStaffStrip(block) {
-        const staff = Array.isArray(block.staff) ? block.staff : [];
-        const MAX_VISIBLE = 7;
-
-        // =========================
-        // STATO VUOTO
-        // =========================
-        if (staff.length === 0) {
-            return `
-        <div class="uo-block-staff-strip is-empty" data-staff-strip>
-            <span class="uo-staff-chip is-empty">
-                <span class="uo-staff-icon">👥</span>
-                <span class="uo-staff-count">STAFF: 0</span>
-            </span>
-        </div>
-        `;
-        }
-
-        const visibleStaff = staff.slice(0, MAX_VISIBLE);
-        const hiddenStaff = staff.slice(MAX_VISIBLE);
-        const hiddenCount = hiddenStaff.length;
-
-        // =========================
-        // CHIP CON RUOLO TRA PARENTESI
-        // =========================
-        const chips = visibleStaff.map(m => {
-            const isQuick = !!m.isQuick;
-            const role = (m.role || '').trim();
-
-            return `
-        <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}">
-            <span class="uo-staff-name">
-                ${escapeHtml(m.name)}
-                ${!isQuick && role ? ` <span class="uo-staff-role-inline">(${escapeHtml(role)})</span>` : ''}
-            </span>
-            ${isQuick ? `<span class="uo-staff-badge">⚡</span>` : ''}
-        </span>
-    `;
-        }).join('');
-
-
-        // =========================
-        // +X CON HOVER LIST
-        // =========================
-        const more = hiddenCount > 0 ? `
-        <span class="uo-staff-more">
-            +${hiddenCount}
-
-            <div class="uo-staff-hover">
-                ${hiddenStaff.map(m => `
-                    <div class="uo-staff-hover-item">
-                        <span class="uo-staff-hover-name">
-                            ${escapeHtml(m.name)}
-                        </span>
-                        ${m.isQuick
-                ? `<span class="uo-staff-hover-badge">⚡</span>`
-                : m.role
-                    ? `<span class="uo-staff-hover-badge">${escapeHtml(m.role)}</span>`
-                    : ''
-            }
-                    </div>
-                `).join('')}
-            </div>
-        </span>
-    ` : '';
-
-        return `
-    <div class="uo-block-staff-strip" data-staff-strip>
-        ${chips}
-        ${more}
-    </div>
-    `;
-    }
 
 
 
@@ -1107,183 +834,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('is-staff-hover-open');
     });
 
-
-
-
-    function openStaffDrawer(blockId, blockLabel = '') {
-        if (!staffDrawer) return;
-
-        const block = blocks.find(b => b.id === blockId);
-        if (!block) return;
-
-        activeBlockId = blockId;
-
-        // =========================
-        // TITOLO
-        // =========================
-        const titleEl = document.getElementById('uo-staff-drawer-title');
-        if (titleEl) {
-            titleEl.textContent = `Staff — ${blockLabel || 'Blocco'}`;
-        }
-
-        // =========================
-        // ORARIO DINAMICO
-        // =========================
-        const timeEl = document.getElementById('uo-staff-drawer-time');
-        if (timeEl) {
-            const unit = CONFIG.UNIT_MINUTES;
-
-            const axisStart =
-                cfg.axis_start_minutes ??
-                (cfg.axis_start_slot * unit) ??
-                0;
-
-            const startMinutes = axisStart + block.tStart;
-            const endMinutes = startMinutes + block.duration;
-
-            timeEl.textContent =
-                `${minutesToHHMM(startMinutes)} → ${minutesToHHMM(endMinutes)} • ${block.duration} min`;
-        }
-
-        // =========================
-        // APERTURA DRAWER
-        // =========================
-        staffDrawer.classList.remove('is-hidden');
-        staffDrawer.removeAttribute('inert');
-
-        // =========================
-        // STAFF ASSEGNATO (LISTA)
-        // =========================
-        renderAssignedStaff(block);
-
-        // =========================
-        // AGGIUNTA RAPIDA ⚡ (INPUT + ENTER)
-        // =========================
-        const quickInput = staffDrawer.querySelector('[data-staff-quick-input]');
-        const quickAddBtn = staffDrawer.querySelector('[data-staff-quick-add]');
-
-        function handleQuickStaffAdd() {
-            if (!quickInput) return;
-
-            const name = quickInput.value.trim();
-            if (!name) return;
-
-            addQuickStaffToActiveBlock(name);
-
-            quickInput.value = '';
-            quickInput.focus();
-
-            // aggiorna lista staff assegnato
-            renderAssignedStaff(block);
-        }
-
-        if (quickAddBtn) {
-            quickAddBtn.onclick = handleQuickStaffAdd;
-        }
-
-        if (quickInput) {
-            quickInput.onkeydown = (e) => {
-                if (e.key !== 'Enter') return;
-                if (e.shiftKey) return;
-
-                e.preventDefault();
-                handleQuickStaffAdd();
-            };
-        }
-
-        // =========================
-        // STAFF DELL’ACCOUNT (ACCORDION)
-        // =========================
-        const accountListEl = staffDrawer.querySelector('.uo-staff-account-list');
-        const countEl = staffDrawer.querySelector('.uo-staff-accordion-count');
-
-        if (!accountListEl || !countEl) {
-            console.warn('Staff drawer: elementi DOM mancanti');
-            return;
-        }
-
-        // Stato iniziale
-        accountListEl.innerHTML = `
-        <div class="uo-staff-account-empty text-white">
-            Caricamento staff…
-        </div>
-    `;
-        countEl.textContent = '(…)';
-
-        // Fetch + render
-        fetchAccountStaff()
-            .then(staff => {
-                accountStaffCache = Array.isArray(staff) ? staff : [];
-
-                countEl.textContent = `(${accountStaffCache.length})`;
-
-                if (!accountStaffCache.length) {
-                    accountListEl.innerHTML = `
-                    <div class="uo-staff-account-empty text-white">
-                        Nessuno staff disponibile per questo account
-                    </div>
-                `;
-                    return;
-                }
-
-                accountListEl.innerHTML = accountStaffCache.map(s => `
-                <div class="uo-staff-row" data-staff-id="${s.id}">
-                    <div class="uo-staff-main">
-                        <span class="uo-staff-name">
-                            ${s.stage_name ?? ''}
-                            ${s.role
-                        ? `<span class="uo-staff-role-inline"> (${s.role})</span>`
-                        : (
-                            Array.isArray(s.skills) && s.skills.length
-                                ? `<span class="uo-staff-role-inline"> (${s.skills.join(', ')})</span>`
-                                : ''
-                        )
-                    }
-                        </span>
-                    </div>
-
-                    <button
-                        type="button"
-                        class="uo-staff-assign"
-                        title="Assegna"
-                        data-staff-id="${s.id}"
-                    >+</button>
-                </div>
-            `).join('');
-            })
-            .catch(err => {
-                console.error('Errore fetchAccountStaff:', err);
-                accountStaffCache = [];
-                countEl.textContent = '(!)';
-                accountListEl.innerHTML = `
-                <div class="uo-staff-account-empty text-white">
-                    Errore caricamento staff
-                </div>
-            `;
-            });
-    }
-
-
-    // helper semplice per evitare XSS nei title / html
-    function escapeHtml(str) {
-        return String(str)
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#039;');
-    }
-
-
-
-    function deleteBlock(blockId) {
-        blocks = blocks.filter(b => b.id !== blockId);
-        activeBlockId = null;
-        TimelineRepository.save(blocks);
-        renderBlocks();
-        updateStaffOverflow();
-    }
-
     // ----------------
     // Inline Editing Logic (Block Label)
     // ----------------
@@ -1358,33 +908,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: true });
     }
 
-    // ----------------
-    // Collision Handling (timeline normalizzata)
-    // ----------------
-    function getCollisionLimits(activeId) {
-        const timelineMinutes = cfg.total_slots * CONFIG.UNIT_MINUTES;
-
-        const activeBlock = blocks.find(b => b.id === activeId);
-
-        let minStart = 0;
-        let maxEnd = timelineMinutes;
-
-        if (!activeBlock) return { minStart, maxEnd };
-
-        blocks.forEach(other => {
-            if (other.id === activeId) return;
-
-            if (other.tStart + other.duration <= activeBlock.tStart) {
-                minStart = Math.max(minStart, other.tStart + other.duration);
-            }
-
-            if (other.tStart >= activeBlock.tStart + activeBlock.duration) {
-                maxEnd = Math.min(maxEnd, other.tStart);
-            }
-        });
-
-        return { minStart, maxEnd };
-    }
 
     // ----------------
     // Auto-Scroll Engine
@@ -1449,7 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentRawY = getCanvasRelativeY(clientY, canvas);
         const deltaY = currentRawY - dragStartY;
 
-        const limits = getCollisionLimits(activeBlockId);
+        const limits = getCollisionLimits({
+            blocks,
+            activeId: activeBlockId,
+            timelineMinutes: cfg.total_slots * CONFIG.UNIT_MINUTES
+        });
+
 
         // RESIZE
         if (isResizing) {
@@ -1558,7 +1086,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ========================= */
         if (targetBlock) {
             if (e.altKey) {
-                deleteBlock(targetBlock.dataset.blockId);
+                blocks = deleteBlock({
+                    blocks,
+                    blockId: block.id
+                });
+                activeBlockId = null;
+                TimelineRepository.save(blocks);
+                renderBlocks();
+                updateStaffOverflow();
+
                 return;
             }
 
@@ -1580,22 +1116,14 @@ document.addEventListener('DOMContentLoaded', () => {
            CREATE — GUARDIA GUTTER
         ========================= */
 
-        const clickedMinute = snapToUnit(
-            (rawY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES
-        );
+        if (currentGhostY == null) return;
+
+        const clickedMinute =
+            (currentGhostY / CONFIG.SLOT_HEIGHT) * CONFIG.UNIT_MINUTES;
+
 
         const MIN_DURATION = 60;
         const timelineEnd = cfg.total_slots * CONFIG.UNIT_MINUTES;
-
-        // ❌ se clicchi sopra un blocco → stop
-        const blockUnderCursor = Array.from(
-            canvas.querySelectorAll('.uo-timeline-block')
-        ).find(blockEl => {
-            const r = blockEl.getBoundingClientRect();
-            return e.clientY >= r.top && e.clientY <= r.bottom;
-        });
-
-        if (blockUnderCursor) return;
 
         // 🔧 se clicchi troppo in basso, shifta verso l’alto
         const probeMinute = Math.min(
@@ -1607,8 +1135,7 @@ document.addEventListener('DOMContentLoaded', () => {
             blocks,
             clickedMinute,
             minDuration: MIN_DURATION,
-            timelineEnd: cfg.total_slots * CONFIG.UNIT_MINUTES,
-            mode: 'strict'
+            timelineEnd
         });
 
         if (startMinute === null) {

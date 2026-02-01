@@ -2,6 +2,7 @@
 // 05_COMPONENTS.JS
 // Generatori di HTML e Logica di Template
 // ================================
+import { escapeHtml } from './tl-utils.js';
 
 // ================================
 // STAFF RENDERING
@@ -98,43 +99,130 @@ export function generateTimeSlots({
     return slots;
 }
 
+// ================================
+// TIME AXIS RENDER (SLOT-BASED)
+// ================================
+export function renderTimeAxis(cfg, { UNIT_MINUTES }) {
+    const axis = document.getElementById('timeline-axis');
+    if (!axis) return [];
+
+    axis.innerHTML = '';
+
+    const slots = generateTimeSlots({
+        axisStartSlot: cfg.axis_start_slot,
+        totalSlots: cfg.total_slots,
+        unitMinutes: UNIT_MINUTES
+    });
+
+    slots.forEach(slot => {
+        const el = document.createElement('div');
+        el.className = 'uo-timeline-axis-slot';
+
+        if (slot.isHour) {
+            el.classList.add('is-hour');
+            el.textContent = slot.displayHour;
+        }
+
+        axis.appendChild(el);
+    });
+
+    return slots;
+}
+
+export function updateTimelineHeaderContext(cfg) {
+    if (!cfg || cfg.mode !== "multi") return;
+
+    const dateEl = document.getElementById("uo-timeline-current-date");
+    const statusEl = document.getElementById("uo-timeline-date-status");
+    if (!dateEl || !statusEl) return;
+
+    const startDateStr = dateEl.dataset.startDate;
+    if (!startDateStr) return;
+
+    const baseDate = new Date(startDateStr);
+    const windowIndex = cfg.page?.index ?? 0;
+
+    const startMin = cfg.time_real?.start_minutes;
+    const endMin = cfg.time_real?.end_minutes;
+    if (startMin == null || endMin == null) return;
+
+    const startDateTime = new Date(baseDate);
+    startDateTime.setDate(startDateTime.getDate() + windowIndex);
+    startDateTime.setHours(
+        Math.floor(startMin / 60),
+        startMin % 60,
+        0,
+        0
+    );
+
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + (endMin - startMin));
+
+    const sameDay =
+        startDateTime.toDateString() === endDateTime.toDateString();
+
+    const dateFormatter = new Intl.DateTimeFormat("it-IT", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long"
+    });
+
+    const timeFormatter = new Intl.DateTimeFormat("it-IT", {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    const datePart = sameDay
+        ? dateFormatter.format(startDateTime)
+        : `${dateFormatter.format(startDateTime)} → ${dateFormatter.format(endDateTime)}`;
+
+    const timePart =
+        `${timeFormatter.format(startDateTime)} → ${timeFormatter.format(endDateTime)}`;
+
+    dateEl.textContent = `🗓 ${datePart} • ${timePart}`;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const windowDay = new Date(startDateTime);
+    windowDay.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round(
+        (windowDay - today) / (1000 * 60 * 60 * 24)
+    );
+
+    let label = null;
+    let cls = null;
+
+    if (diffDays === 0) {
+        label = "Oggi";
+        cls = "is-today";
+    } else if (diffDays === 1) {
+        label = "Domani";
+        cls = "is-future";
+    } else if (diffDays === -1) {
+        label = "Ieri";
+        cls = "is-past";
+    } else if (diffDays > 1) {
+        label = `tra ${diffDays} giorni`;
+        cls = "is-future";
+    } else {
+        label = `${Math.abs(diffDays)} giorni fa`;
+        cls = "is-past";
+    }
+
+    statusEl.textContent = label;
+    statusEl.className = `uo-meta-status ${cls}`;
+}
+
+
+
+
 
 // ================================
 // EVENT RANGE (HIGHLIGHT)
 // ================================
 
-export function renderEventRangeLegacy({
-    canvas,
-    eventStartMinutes,
-    eventEndMinutes,
-    rangeStartMinutes,
-    pxPerMinute,
-}) {
-    if (!canvas || eventStartMinutes == null) return;
-
-    let range = canvas.querySelector('.uo-event-range');
-    if (!range) {
-        range = document.createElement('div');
-        range.className = 'uo-event-range';
-        range.setAttribute('aria-hidden', 'true');
-        canvas.appendChild(range);
-    }
-
-    const SNAP_MINUTES = 15;
-    const snapDown = (m) => Math.floor(m / SNAP_MINUTES) * SNAP_MINUTES;
-    const snapUp = (m) => Math.ceil(m / SNAP_MINUTES) * SNAP_MINUTES;
-
-    let start = snapDown(eventStartMinutes);
-    let end = snapUp(eventEndMinutes ?? (eventStartMinutes + 180));
-
-    if (end < start) end += 24 * 60;
-
-    const startOffset = start - rangeStartMinutes;
-    const duration = end - start;
-
-    range.style.top = `${startOffset * pxPerMinute}px`;
-    range.style.height = `${duration * pxPerMinute}px`;
-}
 
 export function renderEventRangeFromAxis({
     canvas,
@@ -296,7 +384,166 @@ export function renderEventRangeFromSlots({ canvas, slotHeight }) {
 
 }
 
+//STAFF STRIP
+export function renderStaffStrip(block) {
+    const staff = Array.isArray(block.staff) ? block.staff : [];
+    const MAX_VISIBLE = 7;
+
+    // =========================
+    // STATO VUOTO
+    // =========================
+    if (staff.length === 0) {
+        return `
+        <div class="uo-block-staff-strip is-empty" data-staff-strip>
+            <span class="uo-staff-chip is-empty">
+                <span class="uo-staff-icon">👥</span>
+                <span class="uo-staff-count">STAFF: 0</span>
+            </span>
+        </div>
+        `;
+    }
+
+    const visibleStaff = staff.slice(0, MAX_VISIBLE);
+    const hiddenStaff = staff.slice(MAX_VISIBLE);
+    const hiddenCount = hiddenStaff.length;
+
+    // =========================
+    // CHIP CON RUOLO TRA PARENTESI
+    // =========================
+    const chips = visibleStaff.map(m => {
+        const isQuick = !!m.isQuick;
+        const role = (m.role || '').trim();
+
+        return `
+        <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}">
+            <span class="uo-staff-name">
+                ${escapeHtml(m.name)}
+                ${!isQuick && role ? ` <span class="uo-staff-role-inline">(${escapeHtml(role)})</span>` : ''}
+            </span>
+            ${isQuick ? `<span class="uo-staff-badge">⚡</span>` : ''}
+        </span>
+    `;
+    }).join('');
 
 
+    // =========================
+    // +X CON HOVER LIST
+    // =========================
+    const more = hiddenCount > 0 ? `
+        <span class="uo-staff-more">
+            +${hiddenCount}
+
+            <div class="uo-staff-hover">
+                ${hiddenStaff.map(m => `
+                    <div class="uo-staff-hover-item">
+                        <span class="uo-staff-hover-name">
+                            ${escapeHtml(m.name)}
+                        </span>
+                        ${m.isQuick
+            ? `<span class="uo-staff-hover-badge">⚡</span>`
+            : m.role
+                ? `<span class="uo-staff-hover-badge">${escapeHtml(m.role)}</span>`
+                : ''
+        }
+                    </div>
+                `).join('')}
+            </div>
+        </span>
+    ` : '';
+
+    return `
+    <div class="uo-block-staff-strip" data-staff-strip>
+        ${chips}
+        ${more}
+    </div>
+    `;
+}
+
+
+export function renderAssignedStaff(block, container) {
+    if (!container) return;
+
+    if (!block.staff || block.staff.length === 0) {
+        container.innerHTML = `
+            <div class="uo-staff-assigned-empty">
+                Nessuno staff assegnato a questo blocco
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = block.staff.map(m => `
+        <div class="uo-staff-assigned-row" data-staff-id="${m.id}">
+            <span class="uo-staff-assigned-name">
+                ${m.isQuick ? '⚡' : '👤'} ${escapeHtml(m.name)}
+            </span>
+            <div class="uo-staff-assigned-actions">
+                ${m.isQuick ? `<button data-rename>✏️</button>` : ''}
+                <button data-remove>✕</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// ================================
+// COLOR CONTEXT MENU (UI WORKFLOW)
+// ================================
+export function initColorMenu({
+    blocks,
+    canvas,
+    palette,
+    onUpdate
+}) {
+    let contextMenuEl = null;
+
+    function closeContextMenu() {
+        if (contextMenuEl) {
+            contextMenuEl.remove();
+            contextMenuEl = null;
+        }
+    }
+
+    function openColorMenu(x, y, blockId) {
+        closeContextMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'uo-context-menu';
+
+        const OFFSET = 6;
+        menu.style.left = `${x + OFFSET}px`;
+        menu.style.top = `${y + OFFSET}px`;
+
+        palette.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = 'uo-color-swatch';
+            swatch.style.backgroundColor = color;
+
+            swatch.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                onUpdate(blockId, color);
+                closeContextMenu();
+            });
+
+            menu.appendChild(swatch);
+        });
+
+        document.body.appendChild(menu);
+        contextMenuEl = menu;
+    }
+
+    // Chiudi menu se clicchi fuori
+    document.addEventListener('pointerdown', (e) => {
+        if (contextMenuEl && !contextMenuEl.contains(e.target)) {
+            closeContextMenu();
+        }
+    });
+
+    return {
+        openColorMenu,
+        closeContextMenu
+    };
+}
 
 

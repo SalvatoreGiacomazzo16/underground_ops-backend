@@ -45,3 +45,24 @@ export const TimelineRepository = {
         }
     }
 };
+
+
+export async function fetchAccountStaff() {
+
+
+    const res = await fetch('/admin/staff/json', {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Fetch staff failed (${res.status}): ${text.slice(0, 200)}`);
+    }
+
+    return await res.json();
+
+
+}
