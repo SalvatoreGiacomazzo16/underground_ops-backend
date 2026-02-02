@@ -478,16 +478,29 @@ export function renderAssignedStaff(block, container) {
     }
 
     container.innerHTML = block.staff.map(m => `
-        <div class="uo-staff-assigned-row" data-staff-id="${m.id}">
-            <span class="uo-staff-assigned-name">
-                ${m.isQuick ? '⚡' : '👤'} ${escapeHtml(m.name)}
-            </span>
-            <div class="uo-staff-assigned-actions">
-                ${m.isQuick ? `<button data-rename>✏️</button>` : ''}
-                <button data-remove>✕</button>
-            </div>
-        </div>
-    `).join('');
+  <div class="uo-staff-assigned-row" data-staff-id="${m.id}">
+    <span class="uo-staff-assigned-name">
+      ${m.isQuick ? '⚡' : '👤'} ${escapeHtml(m.name)}
+    </span>
+
+    <div class="uo-staff-assigned-actions">
+      ${m.isQuick ? `
+        <button type="button" data-rename title="Rinomina">✏️</button>
+      ` : ''}
+
+      <button
+        type="button"
+        class="bar-delete"
+        data-remove
+        title="Rimuovi"
+      >
+        <span class="delete-bar"></span>
+        ❌
+      </button>
+    </div>
+  </div>
+`).join('');
+
 }
 
 // ================================

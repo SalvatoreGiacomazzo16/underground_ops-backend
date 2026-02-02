@@ -420,40 +420,143 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+
     const assignedContainer = staffDrawer.querySelector('[data-staff-assigned]');
+    if (!assignedContainer) {
+        console.warn('assignedContainer not found');
+    } else {
+        initAssignedStaffActions({
+            assignedContainer,
+            getActiveBlock: () => blocks.find(b => b.id === activeBlockId),
+            onRemove: (staffId) => removeStaffFromActiveBlock(staffId),
+            onRename: ({ staffId, row }) => startQuickStaffRename({ staffId, row }),
+        });
+    }
 
-    assignedContainer.addEventListener('pointerdown', (e) => {
-        const deleteBtn = e.target.closest('[data-action="delete"]');
-        if (!deleteBtn) return;
+    function initAssignedStaffActions({ assignedContainer, getActiveBlock, onRemove, onRename }) {
+        const HOLD_TIME = 1500;
 
-        const row = deleteBtn.closest('.uo-staff-assigned-row');
-        if (!row) return;
+        let timer = null;
+        let activeBtn = null;
 
-        const staffId = row.dataset.staffId;
-        if (!staffId) return;
+        // pointerdown: start hold OR rename
+        assignedContainer.addEventListener('pointerdown', (e) => {
+            const row = e.target.closest('.uo-staff-assigned-row');
+            if (!row) return;
 
-        bindHoldAction({
-            element: deleteBtn,
-            onConfirm: () => {
-                removeStaffFromActiveBlock(staffId);
+            const staffId = row.dataset.staffId;
+            if (!staffId) return;
+
+            // ✏️ rename (click immediato)
+            const renameBtn = e.target.closest('[data-rename]');
+            if (renameBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                onRename({ staffId, row });
+                return;
+            }
+
+            // ❌ delete hold
+            const removeBtn = e.target.closest('[data-remove]');
+            if (!removeBtn) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            // safety: serve blocco attivo
+            const block = getActiveBlock();
+            if (!block) return;
+
+            activeBtn = removeBtn;
+
+            // avvia animazione gauge
+            removeBtn.classList.add('holding');
+            removeBtn.style.setProperty('--holdTime', `${HOLD_TIME}ms`);
+
+            // cattura pointer per ricevere pointerup anche se esci dal bottone
+            try { removeBtn.setPointerCapture(e.pointerId); } catch { }
+
+            timer = window.setTimeout(() => {
+                onRemove(staffId);
+                cleanupHold();
+            }, HOLD_TIME);
+        });
+
+        // stop: pointerup/cancel
+        assignedContainer.addEventListener('pointerup', cleanupHold);
+        assignedContainer.addEventListener('pointercancel', cleanupHold);
+        assignedContainer.addEventListener('pointerleave', cleanupHold);
+
+        function cleanupHold() {
+            if (!activeBtn) return;
+
+            activeBtn.classList.remove('holding');
+            if (timer) window.clearTimeout(timer);
+
+            timer = null;
+            activeBtn = null;
+        }
+    }
+
+
+    function startQuickStaffRename({ staffId, row }) {
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+
+        const member = block.staff.find(s => String(s.id) === String(staffId));
+        if (!member || !member.isQuick) return;
+
+        const nameEl = row.querySelector('.uo-staff-assigned-name');
+        if (!nameEl) return;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = member.name;
+        input.className = 'uo-staff-rename-input';
+
+        nameEl.replaceWith(input);
+
+        requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+        });
+
+        const save = () => {
+            const val = input.value.trim();
+            if (val) {
+                member.name = val;
+                TimelineRepository.save(blocks);
+            }
+
+            renderAssignedStaff(block, assignedContainer);
+            rerenderBlockStaff(block.id);
+        };
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') {
+                renderAssignedStaff(block, assignedContainer);
             }
         });
-    });
+    }
+
 
     function removeStaffFromActiveBlock(staffId) {
         if (!activeBlockId) return;
 
         const block = blocks.find(b => b.id === activeBlockId);
-        if (!block || !Array.isArray(block.staff)) return;
+        if (!block) return;
 
         block.staff = block.staff.filter(s => String(s.id) !== String(staffId));
 
         TimelineRepository.save(blocks);
 
-        // aggiorna UI
+        // UI sync
+        renderAssignedStaff(block, assignedContainer);
         rerenderBlockStaff(block.id);
-        renderAssignedStaff(block, assignedListEl);
     }
+
 
     function closeStaffDrawer() {
         if (!staffDrawer) return;
