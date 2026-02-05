@@ -20,6 +20,7 @@ import {
     generateTimeSlots,
     renderEventRangeFromSlots,
     renderTimeAxis,
+    renderEventRangeFromAxis,
     updateTimelineHeaderContext,
     renderStaffStrip,
     renderAssignedStaff,
@@ -63,7 +64,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------
     // Axis + Range
     // ----------------
-    renderTimeAxis(cfg, CONFIG);
+
+    const slots = renderTimeAxis(cfg, CONFIG);
+
+    renderEventRangeFromAxis({
+        canvas,
+        slots,
+        eventStartMinutes: cfg.time_real?.start_minutes,
+        eventEndMinutes: cfg.time_real?.end_minutes,
+        unitMinutes: CONFIG.UNIT_MINUTES,
+        slotHeight: CONFIG.SLOT_HEIGHT
+    });
+
+
+
 
     // ----------------
     // Header Date Sync (MULTI DAY)

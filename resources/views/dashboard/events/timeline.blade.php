@@ -172,7 +172,7 @@ class="uo-timeline-nav is-prev {{ $timelineConfig['page']['is_last'] ? 'is-activ
             <div class="uo-timeline-ghost"></div>
             {{-- blocchi e range vengono iniettati dal JS --}}
 
-
+  <div class="uo-event-range-layer"></div>
 
 
         </div>

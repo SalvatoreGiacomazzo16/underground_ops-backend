@@ -533,93 +533,110 @@ main.admin-content {
     }
 }
 
-
-
-/* ============================
-   EVENT RANGE — SLOT BASED
-   Background semantico evento
-============================ */
 /* ============================
    EVENT RANGE — SLOT BASED
    Enterprise / Production
 ============================ */
+
+.uo-event-range-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 10;
+}
 
 .uo-event-range {
     position: absolute;
     left: 0;
     right: 0;
 
-    pointer-events: none;
-    z-index: 2;
-
-    /* ===== Tooltip ===== */
-    &::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        top: -34px;
-        left: 50%;
-        transform: translateX(-50%) translateY(0);
-
-        padding: 6px 10px;
-        background: rgba(10, 0, 20, 0.92);
-        border: 1px solid rgba(201, 22, 154, 0.55);
-        border-radius: 6px;
-
-        color: #fff;
-        font-size: 12px;
-        white-space: nowrap;
-
-        opacity: 0;
-        pointer-events: none;
-
-        box-shadow:
-            0 0 14px rgba(201, 22, 154, 0.35),
-            inset 0 0 0 1px rgba(201, 22, 154, 0.15);
-
-        transition:
-            opacity 0.15s ease,
-            transform 0.15s ease;
-    }
-
-    &:hover::after {
-        opacity: 1;
-        transform: translateX(-50%) translateY(-4px);
-    }
-}
-
-
-/* ============================
-   RANGE VISIVO — SLOT
-============================ */
-
-.uo-event-range--slots {
     background:
         linear-gradient(180deg,
-            rgba(201, 22, 154, 0.30),
-            rgba(201, 22, 154, 0.12));
+            rgba(255, 62, 191, 0.45),
+            rgba(201, 22, 154, 0.35));
+
+    border-top: 1px solid rgba(255, 62, 191, 0.7);
+    border-bottom: 1px solid rgba(255, 62, 191, 0.55);
 
     box-shadow:
-        inset 0 0 0 1px rgba(201, 22, 154, 0.35),
-        inset 0 0 40px rgba(201, 22, 154, 0.35);
+        inset 0 0 28px rgba(255, 62, 191, 0.35),
+        0 0 45px rgba(255, 62, 191, 0.45);
 
-    mix-blend-mode: screen; // 🔥 visibile su nero puro
-    opacity: 0.9;
+    animation: range-breathe-neon 4.5s ease-in-out infinite;
+}
 
-    transition:
-        opacity 0.2s ease,
-        box-shadow 0.2s ease;
+@keyframes range-breathe-neon {
+    0% {
+        opacity: 0.55;
+        box-shadow:
+            inset 0 0 22px rgba(255, 62, 191, 0.25),
+            0 0 35px rgba(255, 62, 191, 0.35);
+    }
+
+    50% {
+        opacity: 0.85;
+        box-shadow:
+            inset 0 0 40px rgba(255, 62, 191, 0.45),
+            0 0 70px rgba(255, 62, 191, 0.75);
+    }
+
+    100% {
+        opacity: 0.55;
+        box-shadow:
+            inset 0 0 22px rgba(255, 62, 191, 0.25),
+            0 0 35px rgba(255, 62, 191, 0.35);
+    }
 }
 
 
-/* ===== Hover enhancement ===== */
+.uo-event-range::after {
+    content: '';
+    position: absolute;
+    inset: 0;
 
-.uo-event-range--slots:hover {
-    opacity: 1;
+    background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(255, 255, 255, 0.35) 50%,
+            transparent 100%);
 
-    box-shadow:
-        inset 0 0 0 1px rgba(201, 22, 154, 0.55),
-        inset 0 0 60px rgba(201, 22, 154, 0.45);
+    background-size: 100% 140px;
+    animation: range-scan-neon 5s linear infinite;
+
+    opacity: 0.55;
+    pointer-events: none;
 }
+
+
+@keyframes range-scan-neon {
+    from {
+        background-position-y: -140px;
+    }
+
+    to {
+        background-position-y: 140px;
+    }
+}
+
+
+.uo-event-range::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+
+    background-image:
+        repeating-linear-gradient(180deg,
+            rgba(255, 255, 255, 0.015) 0,
+            rgba(255, 255, 255, 0.015) 1px,
+            transparent 1px,
+            transparent 3px);
+
+    mix-blend-mode: overlay;
+    opacity: 0.25;
+    pointer-events: none;
+}
+
 
 
 

@@ -277,6 +277,15 @@ export function renderEventRangeFromAxis({
     range.style.top = `${topPx}px`;
     range.style.height = `${heightPx}px`;
 
+    range.removeAttribute("aria-hidden");
+
+    const rangeLayer =
+        document.querySelector('.uo-event-range-layer') || canvas.parentElement;
+
+    rangeLayer.appendChild(range);
+
+
+
 }
 
 
