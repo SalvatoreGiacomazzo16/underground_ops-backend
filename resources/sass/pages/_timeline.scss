@@ -1002,3 +1002,43 @@ main.admin-content {
     background: rgba(0, 0, 0, .25);
     border: 1px dashed rgba(255, 255, 255, .25);
 }
+
+// ================================
+// MOBILE — BLOCK ACTIONS ALWAYS ON
+// ================================
+@media (max-width: 768px) {
+    .uo-timeline-block {
+
+        .uo-block-actions {
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+        }
+
+        // niente hover logic su mobile
+        &:hover .uo-block-actions {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .uo-block-actions {
+        gap: 6px;
+
+        button {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(6px);
+
+            svg,
+            span {
+                pointer-events: none;
+            }
+        }
+    }
+}
