@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\ClerkBridgeController;
 
 // ================================
 // CONTROLLER ADMIN
@@ -21,6 +21,10 @@ use App\Http\Controllers\ManagerDashboardController;
 |--------------------------------------------------------------------------
 */
 Auth::routes();
+
+// CLERK BRIDGE CONTROLLER
+Route::post('/auth/clerk/bridge', [ClerkBridgeController::class, 'store'])
+    ->name('auth.clerk.bridge');
 
 /*
 |--------------------------------------------------------------------------

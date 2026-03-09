@@ -108,32 +108,44 @@ export function generateTimeSlots({
 // TIME AXIS RENDER (SLOT-BASED)
 // ================================
 export function renderTimeAxis(cfg, { UNIT_MINUTES }) {
+
+    // recupero il container dell’asse temporale
     const axis = document.getElementById('timeline-axis');
+
+    // se non esiste esco per evitare errori
     if (!axis) return [];
 
+    // pulisco l’asse per fare un render completo
     axis.innerHTML = '';
 
+    // genero la struttura logica degli slot temporali
+    // qui non creo dom, solo dati (minuti, ora intera, label ecc)
     const slots = generateTimeSlots({
-        axisStartSlot: cfg.axis_start_slot,
-        totalSlots: cfg.total_slots,
-        unitMinutes: UNIT_MINUTES
+        axisStartSlot: cfg.axis_start_slot,   // slot iniziale dell’asse
+        totalSlots: cfg.total_slots,          // numero totale di slot visibili
+        unitMinutes: UNIT_MINUTES             // durata di uno slot in minuti
     });
 
+    // per ogni slot genero il relativo elemento dom
     slots.forEach(slot => {
+
         const el = document.createElement('div');
         el.className = 'uo-timeline-axis-slot';
 
+        // se lo slot corrisponde a un’ora piena
+        // aggiungo classe e label visiva
         if (slot.isHour) {
             el.classList.add('is-hour');
             el.textContent = slot.displayHour;
         }
 
+        // aggiungo lo slot all’asse
         axis.appendChild(el);
     });
 
+    // ritorno gli slot generati per poterli riutilizzare
     return slots;
 }
-
 export function updateTimelineHeaderContext(cfg) {
     if (!cfg || cfg.mode !== "multi") return;
 
@@ -234,58 +246,80 @@ export function renderEventRangeFromAxis({
     slots,
     eventStartMinutes,
     eventEndMinutes,
-    unitMinutes,    // CONFIG.UNIT_MINUTES
-    slotHeight      // CONFIG.SLOT_HEIGHT
+    unitMinutes,    // durata di uno slot in minuti
+    slotHeight      // altezza di uno slot in px
 }) {
+
+    // se non ho canvas o slot validi esco
     if (!canvas || !Array.isArray(slots) || slots.length === 0) return;
+
+    // senza start evento non posso calcolare nulla
     if (eventStartMinutes == null) return;
 
+    // cerco se il range esiste già per evitare duplicati
     let range = canvas.querySelector(".uo-event-range-axis");
+
+    // se non esiste lo creo una sola volta
     if (!range) {
         range = document.createElement("div");
         range.className = "uo-event-range uo-event-range-axis";
+
+        // inizialmente nascosto agli screen reader
         range.setAttribute("aria-hidden", "true");
+
         canvas.appendChild(range);
     }
 
-    // overnight normalize rispetto allo start
+    // normalizzazione overnight
+    // se l’end è dopo mezzanotte lo porto avanti di 1440 minuti
     const normalize = (m) => {
         let mm = m;
         if (mm != null && mm < eventStartMinutes) mm += 1440;
         return mm;
     };
 
+    // calcolo start e end assoluti
     const startAbs = normalize(eventStartMinutes);
+
+    // se non ho end uso default 3 ore
     const endAbs = normalize(eventEndMinutes ?? (eventStartMinutes + 180));
 
+    // snap alla griglia
     const snapDown = (m) => Math.floor(m / unitMinutes) * unitMinutes;
     const snapUp = (m) => Math.ceil(m / unitMinutes) * unitMinutes;
 
     const startSnap = snapDown(startAbs);
     const endSnap = snapUp(endAbs);
 
-    const axisAbs0 = slots[0].absoluteMinutes; // ✅ ora esiste
+    // minuto assoluto del primo slot dell’asse
+    const axisAbs0 = slots[0].absoluteMinutes;
+
+    // conversione tempo → indice slot
     const startIndex = Math.round((startSnap - axisAbs0) / unitMinutes);
     const endIndex = Math.round((endSnap - axisAbs0) / unitMinutes);
 
+    // clamp per evitare indici fuori range
     const si = Math.max(0, Math.min(slots.length - 1, startIndex));
     const ei = Math.max(0, Math.min(slots.length - 1, endIndex));
 
+    // conversione indice → pixel
     const topPx = si * slotHeight;
+
+    // garantisco altezza minima di uno slot
     const heightPx = Math.max(slotHeight, (ei - si) * slotHeight);
 
+    // applico le coordinate al dom
     range.style.top = `${topPx}px`;
     range.style.height = `${heightPx}px`;
 
+    // ora è visibile
     range.removeAttribute("aria-hidden");
 
+    // se esiste un layer dedicato lo uso, altrimenti fallback
     const rangeLayer =
         document.querySelector('.uo-event-range-layer') || canvas.parentElement;
 
     rangeLayer.appendChild(range);
-
-
-
 }
 
 
@@ -400,12 +434,18 @@ export function renderEventRangeFromSlots({ canvas, slotHeight }) {
 
 //STAFF STRIP
 export function renderStaffStrip(block) {
+
+    // mi assicuro che staff sia sempre un array
     const staff = Array.isArray(block.staff) ? block.staff : [];
+
+    // numero massimo di chip visibili prima del +x
     const MAX_VISIBLE = 7;
 
     // =========================
-    // STATO VUOTO
+    // stato vuoto
     // =========================
+
+    // se non ho staff mostro strip placeholder
     if (staff.length === 0) {
         return `
         <div class="uo-block-staff-strip is-empty" data-staff-strip>
@@ -417,32 +457,37 @@ export function renderStaffStrip(block) {
         `;
     }
 
+    // divido staff visibile da quello nascosto
     const visibleStaff = staff.slice(0, MAX_VISIBLE);
     const hiddenStaff = staff.slice(MAX_VISIBLE);
     const hiddenCount = hiddenStaff.length;
 
     // =========================
-    // CHIP CON RUOLO TRA PARENTESI
+    // costruzione chip visibili
     // =========================
+
     const chips = visibleStaff.map(m => {
-        const isQuick = !!m.isQuick;
-        const role = (m.role || '').trim();
+
+        const isQuick = !!m.isQuick;           // flag quick
+        const role = (m.role || '').trim();    // ruolo opzionale
 
         return `
         <span class="uo-staff-chip ${isQuick ? 'is-quick' : ''}">
             <span class="uo-staff-name">
                 ${escapeHtml(m.name)}
-                ${!isQuick && role ? ` <span class="uo-staff-role-inline">(${escapeHtml(role)})</span>` : ''}
+                ${!isQuick && role
+                ? ` <span class="uo-staff-role-inline">(${escapeHtml(role)})</span>`
+                : ''}
             </span>
             ${isQuick ? `<span class="uo-staff-badge">⚡</span>` : ''}
         </span>
-    `;
+        `;
     }).join('');
 
+    // =========================
+    // +x con lista hover
+    // =========================
 
-    // =========================
-    // +X CON HOVER LIST
-    // =========================
     const more = hiddenCount > 0 ? `
         <span class="uo-staff-more">
             +${hiddenCount}
@@ -465,6 +510,7 @@ export function renderStaffStrip(block) {
         </span>
     ` : '';
 
+    // ritorno strip completa
     return `
     <div class="uo-block-staff-strip" data-staff-strip>
         ${chips}
