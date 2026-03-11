@@ -224,19 +224,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderBlocks() {
+
+        // se sto modificando testo inline evito il rerender
+        // per non perdere il focus o l’input attivo
         if (isEditingText) return;
 
+        // rimuovo tutti i blocchi esistenti dal canvas
+        // approccio full rerender, semplice e prevedibile
         canvas
             .querySelectorAll('.uo-timeline-block')
             .forEach(el => el.remove());
 
+        // creo un context object da passare ai builder e agli handler
+        // evita dipendenze globali e centralizza lo stato
         const ctx = {
-            blocks,
-            CONFIG,
-            cfg,
-            activeBlockId,
+            blocks,                  // stato corrente dei blocchi
+            CONFIG,                  // config globale (unità, slot height ecc)
+            cfg,                     // config runtime (range, total slots ecc)
+            activeBlockId,           // blocco attualmente selezionato
+
+            // setter per aggiornare il blocco attivo
             setActiveBlockId: id => activeBlockId = id,
-            setBlocks,
+
+            setBlocks,               // funzione per aggiornare lo stato blocks
+
+            // funzioni ui e azioni
             openColorMenu,
             startInlineEdit,
             openStaffDrawer,
@@ -244,11 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBlock
         };
 
+        // per ogni blocco nello stato
         blocks.forEach(block => {
+
+            // costruisco l’elemento dom partendo dai dati
             const el = buildBlockElement(block, ctx);
+
+            // se il builder decide che non è renderizzabile lo salto
             if (!el) return;
 
+            // collego eventi (drag, resize, click, edit ecc)
             attachBlockEvents(el, block, ctx);
+
+            // aggiungo il blocco al canvas
             canvas.appendChild(el);
         });
     }
