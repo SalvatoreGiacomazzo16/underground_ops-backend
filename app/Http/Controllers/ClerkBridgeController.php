@@ -17,30 +17,25 @@ class ClerkBridgeController extends Controller
             'name'     => ['nullable', 'string', 'max:255'],
         ]);
 
-        // 1) match per clerk_id
         $user = User::where('clerk_id', $data['clerk_id'])->first();
 
-        // 2) fallback match per email
         if (!$user) {
             $user = User::where('email', $data['email'])->first();
         }
 
-        // 3) create se non esiste
         if (!$user) {
-  $user = User::create([
-    'clerk_id' => $data['clerk_id'],
-    'name' => $data['name'] ?: Str::before($data['email'], '@'),
-    'email' => $data['email'],
-    'password' => Str::random(40),
-    'role_id' => 3,
-]);
+            $user = User::create([
+                'clerk_id' => $data['clerk_id'],
+                'name' => $data['name'] ?: Str::before($data['email'], '@'),
+                'email' => $data['email'],
+                'password' => Str::random(40),
+                'role_id' => 3,
+            ]);
         } else {
-            // collega Clerk all'utente legacy
             if (!$user->clerk_id) {
                 $user->clerk_id = $data['clerk_id'];
             }
 
-            // aggiorna name solo se vuoto
             if (!$user->name && !empty($data['name'])) {
                 $user->name = $data['name'];
             }
@@ -48,12 +43,8 @@ class ClerkBridgeController extends Controller
             $user->save();
         }
 
-        Auth::login($user);
-        $request->session()->regenerate();
+        Auth::guard('web')->login($user);
 
-        return response()->json([
-            'ok' => true,
-            'redirect' => route('admin.dashboard'),
-        ]);
+        return redirect()->route('admin.dashboard');
     }
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use App\Http\Controllers\ClerkBridgeController;
 
 // ================================
@@ -134,3 +135,17 @@ Route::get('/', fn () => view('pages.welcome'))
 |--------------------------------------------------------------------------
 */
 Route::fallback(fn () => response()->view('pages.not-found', [], 404));
+
+
+//CLERK
+Route::get('/auth/clerk/bridge', [ClerkBridgeController::class, 'store'])
+    ->name('auth.clerk.bridge');
+
+    Route::post('/logout-bridge', function (Request $request) {
+    Auth::guard('web')->logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect('http://localhost:5173/logout-bridge');
+})->name('logout.bridge');
