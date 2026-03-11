@@ -20,7 +20,7 @@
         <hr class="uo-divider-dark my-4">
 
         {{-- Logout --}}
-        <form action="{{ route('logout') }}" method="POST">
+        <form action="{{ route('logout.bridge') }}" method="POST">
             @csrf
             <button class="uo-btn-outline w-100 uo-btn-pink-outline mt-3">
                 Logout

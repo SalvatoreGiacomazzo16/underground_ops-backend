@@ -24,7 +24,7 @@
 
         @auth
             <a href="{{ route('admin.dashboard') }}" class="uo-btn">Dashboard</a>
-            <form action="{{ route('logout') }}" method="POST" class="d-inline">
+            <form action="{{ route('logout.bridge') }}" method="POST" class="d-inline">
                 @csrf
                 <button class="uo-btn-outline">Logout</button>
             </form>

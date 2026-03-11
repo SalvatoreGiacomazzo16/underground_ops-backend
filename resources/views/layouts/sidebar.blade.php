@@ -12,7 +12,7 @@
 
     {{-- LOGOUT --}}
     <div class="mt-auto pt-4">
-        <form action="{{ route('logout') }}" method="POST">
+        <form action="{{ route('logout.bridge') }}" method="POST">
             @csrf
             <button class="uo-btn-logout w-100">
                 Logout
