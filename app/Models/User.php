@@ -15,7 +15,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_id' => 3,
+        'role_id',
         'clerk_id',
     ];
 
@@ -50,34 +50,27 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Event::class, 'updated_by');
     }
 
+    public function createdLocations()
+    {
+        return $this->hasMany(\App\Models\Location::class, 'created_by');
+    }
+
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class, 'user_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
-    | Default behaviour (backend register = admin)
+    | Default behaviour
     |--------------------------------------------------------------------------
     */
     protected static function booted()
     {
         static::creating(function ($user) {
             if (!$user->role_id) {
-                $user->role_id = 1; // Admin di default nel backend
+                $user->role_id = 3;
             }
         });
     }
-
-public function createdLocations()
-{
-    return $this->hasMany(\App\Models\Location::class, 'created_by');
-}
-
-
- /*   public function staffProfiles()
-{
-    return $this->hasOne(StaffProfile::class, 'user_id');
-}*/
-
-public function staffProfile()
-{
-    return $this->hasOne(StaffProfile::class, 'user_id');
-}
-
 }

@@ -138,8 +138,8 @@ Route::fallback(fn () => response()->view('pages.not-found', [], 404));
 
 
 //CLERK
-Route::get('/auth/clerk/bridge', [ClerkBridgeController::class, 'store'])
-    ->name('auth.clerk.bridge');
+ //Route::get('/auth/clerk/bridge', [ClerkBridgeController::class, 'store'])
+//    ->name('auth.clerk.bridge');
 
     Route::post('/logout-bridge', function (Request $request) {
     Auth::guard('web')->logout();
@@ -147,5 +147,5 @@ Route::get('/auth/clerk/bridge', [ClerkBridgeController::class, 'store'])
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect('http://localhost:5173/logout-bridge');
+    return redirect()->route('welcome');
 })->name('logout.bridge');
